@@ -1,0 +1,83 @@
+# Single source of truth for packages. Read by BOTH install.sh (to install)
+# and verify.sh (to check, and to auto-repair with --fix). Keeping one list
+# means the two can never disagree about what the rice needs — the same
+# reason keybinds.tsv and colors.env exist.
+#
+# Columns (tab-separated): package	tier	provides	why
+#   tier     base     the Sway WM stack itself
+#            deps     things the rice's own configs/scripts invoke
+#            hardware ThinkPad X1 Carbon Gen 11 enablement
+#            integration  what YOUR already-installed apps need from sway
+#            optional nice to have; absence is not a failure
+#   provides the binary this package must put on PATH ("-" if it ships no
+#            binary we call directly). verify.sh maps every `exec` target in
+#            the generated keybinds.conf back through this column, so a
+#            binding whose binary is missing is caught automatically.
+#
+# NOTE: no applications are listed here. VS Code, browsers and virt-manager
+# are deliberately absent — those are yours to install and manage.
+
+# ── base: the compositor and shell ────────────────────────────────────────
+sway	base	sway	The compositor itself
+sway-systemd	base	-	Provides sway-session.target; the supervision backbone
+swaybg	base	swaybg	Wallpaper fallback when swww is unavailable
+swayidle	base	swayidle	Idle/lock/suspend management
+swaylock	base	swaylock	Screen lock
+foot	base	foot	Terminal (Wayland-native, GPU-accelerated)
+waybar	base	waybar	Status bar
+rofi-wayland	base	rofi	Launcher and dmenu backend for every picker
+SwayNotificationCenter	base	swaync	Notification daemon + control center
+grim	base	grim	Screenshot capture
+slurp	base	slurp	Region selection for screenshots
+wl-clipboard	base	wl-copy	Clipboard access for screenshots and cliphist
+cliphist	base	cliphist	Clipboard history ($mod+P)
+polkit	base	-	Privilege prompts
+python3	base	python3	Runs the theme and keybind generators
+jq	base	jq	JSON parsing in launch-or-focus, screenshot, display-menu
+unzip	base	unzip	Extracts the Nerd Font archive
+cargo	base	cargo	Builds matugen and swww from crates.io
+
+# ── deps: invoked by the rice's own scripts and configs ───────────────────
+wireplumber	deps	wpctl	volume.sh — WITHOUT THIS EVERY VOLUME KEY SILENTLY FAILS
+pipewire	deps	-	Audio server wpctl controls
+pipewire-pulseaudio	deps	-	PulseAudio compatibility for pavucontrol
+brightnessctl	deps	brightnessctl	brightness.sh — also needs `video` group membership
+playerctl	deps	playerctl	Media play/pause/next/prev keys
+NetworkManager-tui	deps	nmtui	waybar network module on-click
+network-manager-applet	deps	nm-applet	Network tray icon
+rfkill	deps	rfkill	Bluetooth toggle fallback (F10)
+bluez	deps	bluetoothctl	Bluetooth stack and toggle (F10)
+squeekboard	deps	squeekboard	On-screen keyboard for the touchscreen
+pavucontrol	deps	pavucontrol	waybar audio module on-click
+btop	deps	btop	waybar CPU/memory module on-click
+usbutils	deps	lsusb	fingerprint-setup.sh device identification
+xdg-user-dirs	deps	xdg-user-dir	Creates ~/Pictures so screenshots have somewhere to go
+fontawesome-fonts	deps	-	Icon glyph fallback
+google-noto-color-emoji-fonts	deps	-	Emoji rendering
+
+# ── hardware: ThinkPad X1 Carbon Gen 11 (Raptor Lake / Iris Xe) ───────────
+libva-intel-media-driver	hardware	-	Iris Xe VA-API video decode. NOTE: this is the Fedora package; intel-media-driver is the RPM Fusion one
+libva-utils	hardware	vainfo	Verifies VA-API actually works
+thermald	hardware	thermald	Intel thermal management; matters under sustained VM load
+fwupd	hardware	fwupdmgr	ThinkPad firmware updates via LVFS
+power-profiles-daemon	hardware	powerprofilesctl	Power profiles. MUST NOT run alongside TLP
+fprintd	hardware	fprintd-enroll	Fingerprint reader daemon
+fprintd-pam	hardware	-	PAM integration, enabled via authselect only
+blueman	hardware	blueman-manager	Bluetooth GUI
+
+# ── integration: what your existing apps need from sway ───────────────────
+xdg-desktop-portal-wlr	integration	-	Screen sharing and screencast under sway
+xdg-desktop-portal-gtk	integration	-	File pickers and the dark/light settings portal
+gnome-keyring	integration	gnome-keyring-daemon	Secret Service. Without it VS Code and git credential storage fail silently
+libsecret	integration	secret-tool	Secret Service client library and CLI
+git-credential-libsecret	integration	-	Lets git store credentials in the keyring
+qt6ct	integration	qt6ct	Qt application theming
+adw-gtk3-theme	integration	-	GTK theme matching both palettes
+papirus-icon-theme	integration	-	Icon theme for both palettes
+
+# ── optional: absence is reported but never treated as a failure ──────────
+starship	optional	starship	Shell prompt (cosmetic)
+swayimg	optional	swayimg	Image viewer referenced by a window rule
+python3-gobject	optional	-	GTK4 bindings for the Settings app
+gtk4	optional	-	Settings app toolkit
+libadwaita	optional	-	Settings app widgets and automatic dark/light

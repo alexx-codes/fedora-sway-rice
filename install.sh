@@ -25,6 +25,10 @@ warn() { echo "${c_ylw}[!!]${c_off} $*"; }
 err()  { echo "${c_red}[xx]${c_off} $*"; }
 say()  { echo; echo "==> $*"; }
 
+# packages.tsv is the single manifest shared with verify.sh
+# shellcheck source=scripts/lib-packages.sh
+. "$repo/scripts/lib-packages.sh"
+
 # ---------------------------------------------------------------- packages
 install_packages() {
     say "Checking distro"
@@ -34,37 +38,23 @@ install_packages() {
     fi
     ok "Fedora detected"
 
-    say "Installing packages from official Fedora repos"
-    # Core session: sway + systemd session glue (sway-systemd provides
-    # sway-session.target and env import — the supervision backbone).
-    # foot: Wayland-native GPU-accelerated terminal.
-    # SwayNotificationCenter (swaync): notification daemon chosen over mako
-    #   because it also provides the control center panel — one official-repo
-    #   package covers two roles Quickshell would otherwise have to own.
-    # swaylock (NOT swaylock-effects): the -effects fork only exists in
-    #   stale personal COPRs on Fedora; the aesthetic (wallpaper + themed
-    #   ring) is achievable with plain swaylock, and lock screens are the
-    #   wrong place for fragile packages.
-    # fuzzel: launcher (official repo, rock solid) per confirmed division
-    #   of labor; quickshell handles power menu/OSD/cheatsheet only.
-    # xdg-desktop-portal-{wlr,gtk}: screenshare/screencast + file pickers
-    #   and the settings portal (GTK apps follow dark/light via it).
-    # adw-gtk3-theme + papirus: consistent GTK look in both palettes.
-    # qt6ct: Qt theme management. (nwg-look is COPR-only on Fedora, so it is
-    #   deliberately NOT here — gsettings does the actual GTK switching.)
-    # cargo: builds matugen + swww from crates.io (no extra COPRs).
-    # unzip: needed by the Nerd Font install step below.
-    local pkgs=(
-        sway sway-systemd swaybg swayidle swaylock
-        foot waybar fuzzel SwayNotificationCenter
-        grim slurp wl-clipboard cliphist
-        brightnessctl playerctl pavucontrol btop
-        xdg-desktop-portal-wlr xdg-desktop-portal-gtk
-        qt6ct adw-gtk3-theme papirus-icon-theme
-        starship cargo jq python3 unzip
-        fontawesome-fonts google-noto-color-emoji-fonts
-        polkit squeekboard
-    )
+    say "Installing packages from packages.tsv"
+    # The package list lives in packages.tsv (repo root), shared with
+    # verify.sh so the installer and the checker can never disagree about
+    # what the rice needs. Each entry carries its tier, the binary it must
+    # provide, and why it is here.
+    #
+    # Deliberately absent: VS Code, browsers, virt-manager. Those are
+    # applications you manage yourself. What IS here on their behalf is the
+    # integration tier — portals, Secret Service, VA-API — which is what
+    # those apps need *from sway* to behave correctly.
+    local pkgs=()
+    mapfile -t pkgs < <(pkg_list base deps hardware integration optional)
+    if [ ${#pkgs[@]} -eq 0 ]; then
+        err "packages.tsv is missing or unreadable — cannot continue"; exit 1
+    fi
+    ok "manifest: ${#pkgs[@]} packages across 5 tiers"
+
     # dnf5 (F41+) and dnf4 (F40 and older) spell "keep going past a missing
     # package" differently; --skip-unavailable is dnf5-only and aborts dnf4.
     local skipflag
@@ -77,17 +67,20 @@ install_packages() {
         err "dnf install failed; fix the error above and re-run"; exit 1; }
 
     # Skipped packages are silent above, so verify each one landed and say
-    # loudly which didn't — a missing package here surfaces later as a dead
-    # unit or tofu glyphs, which is much harder to trace back.
+    # loudly which didn't, with the reason it mattered — a missing package
+    # here otherwise surfaces later as a dead unit, tofu glyphs, or a key
+    # that does nothing, all much harder to trace back.
     local missing=()
-    for p in "${pkgs[@]}"; do
-        rpm -q "$p" >/dev/null 2>&1 || missing+=("$p")
-    done
+    mapfile -t missing < <(pkg_missing base deps hardware integration)
     if [ ${#missing[@]} -gt 0 ]; then
-        warn "NOT installed (unavailable in your repos): ${missing[*]}"
-        warn "the rice degrades gracefully, but fix these before relying on the affected part"
+        warn "NOT installed (unavailable in your repos):"
+        local p
+        for p in "${missing[@]}"; do
+            warn "  $p — $(pkg_field "$p" 4)"
+        done
+        warn "run ./verify.sh --fix to retry these"
     else
-        ok "all ${#pkgs[@]} official-repo packages installed"
+        ok "every required package installed"
     fi
 
     # Polkit GUI agent: package name differs across Fedora releases.
@@ -224,6 +217,8 @@ deploy_configs() {
     deploy_tree "$repo/scripts" "$cfg/rice/scripts"
     chmod +x "$cfg/rice/scripts/"*.sh "$cfg/rice/scripts/"*.py
     cp "$repo/keybinds.tsv" "$cfg/rice/keybinds.tsv"
+    # verify.sh --fix runs from the deployed copy too, so it needs the manifest
+    cp "$repo/packages.tsv" "$cfg/rice/packages.tsv"
     deploy_tree "$repo/config/matugen" "$cfg/rice/matugen"
 
     mkdir -p "$cfg/rice/wallpapers"
