@@ -41,10 +41,22 @@ smart_borders on
 titlebar_padding 6 3
 
 # ---------------------------------------------------------------- output
-# X1 Carbon internal panel. The 4K wallpaper is scaled by the wallpaper
-# daemon (swww/swaybg both crop-to-fill), so no output-side handling needed.
-# If your panel is HiDPI (2.8K models), uncomment the scale line.
-# output eDP-1 scale 1.5
+# Scale is resolved at deploy time by install.sh's detect_panel_scale(), which
+# reads the panel's native mode (from sway if running, else DRM sysfs) and
+# picks 2 for a tall HiDPI panel, 1.5 for a mid one, 1 otherwise.
+#
+# Integer 2 is deliberate on the 2.8K panel: fractional scaling makes XWayland
+# clients render soft. Every size in this rice (bar height, font sizes, gaps)
+# is in LOGICAL pixels, so the scale alone corrects them — do not also bump
+# font sizes or you will double-correct.
+#
+# To override, edit this one line and reload ($mod+Shift+R). The Settings app
+# (Display page) writes the same value to ~/.config/rice/settings.conf, which
+# is included below and wins over this.
+output eDP-1 scale __PANEL_SCALE__
+
+# The wallpaper is crop-to-filled by the wallpaper daemon (swww/swaybg), so a
+# 4K source needs no output-side handling.
 
 # ---------------------------------------------------------------- input
 input type:touchpad {
@@ -105,3 +117,9 @@ mode "resize" {
 include ~/.config/sway/workspaces.conf
 include ~/.config/sway/windowrules.conf
 include ~/.config/sway/keybinds.conf
+
+# Runtime overrides written by the Settings app. Included LAST so anything
+# you change there wins over the generated defaults above, and deliberately
+# never touched by install.sh — so runtime tweaks and the git-tracked repo
+# can't fight each other. Safe to delete to return to defaults.
+include ~/.config/rice/settings.conf

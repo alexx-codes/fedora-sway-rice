@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Sway (rice)
+Comment=Sway with the fedora-sway-rice session environment
+Exec=__HOME__/.config/rice/scripts/sway-session.sh
+Type=Application
+DesktopNames=sway
+Keywords=tiling;wm;wayland;sway;

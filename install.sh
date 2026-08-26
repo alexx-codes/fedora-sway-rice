@@ -177,6 +177,39 @@ detect_thermal_zone() {
     echo 0
 }
 
+detect_panel_scale() {
+    # HiDPI scale, resolved rather than guessed. Reads the panel's native
+    # mode: from sway when we're already inside a session, otherwise straight
+    # from DRM sysfs, whose first "modes" line is the preferred mode — which
+    # works from a TTY before sway has ever run.
+    #
+    # Integer 2 is chosen over fractional for tall panels: fractional scaling
+    # makes XWayland clients render soft, and everything in this rice is
+    # already sized in LOGICAL pixels, so the scale alone corrects it.
+    local h=""
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v swaymsg >/dev/null 2>&1 \
+       && command -v jq >/dev/null 2>&1; then
+        h=$(swaymsg -t get_outputs 2>/dev/null \
+            | jq -r '[.[] | select(.name | test("^eDP")) | .current_mode.height][0] // empty')
+    fi
+    if [ -z "$h" ]; then
+        local m
+        for m in /sys/class/drm/*eDP*/modes; do
+            [ -f "$m" ] || continue
+            h=$(head -1 "$m" 2>/dev/null | cut -dx -f2)
+            [ -n "$h" ] && break
+        done
+    fi
+    if [ -z "$h" ]; then
+        echo 1
+        return
+    fi
+    if   [ "$h" -ge 1700 ] 2>/dev/null; then echo 2
+    elif [ "$h" -ge 1300 ] 2>/dev/null; then echo 1.5
+    else                                     echo 1
+    fi
+}
+
 deploy_tree() { # deploy_tree <src-dir> <dst-dir>  (copies + placeholder substitution)
     local src="$1" dst="$2"
     mkdir -p "$dst"
@@ -184,7 +217,8 @@ deploy_tree() { # deploy_tree <src-dir> <dst-dir>  (copies + placeholder substit
         local d="$dst/${f#./}"
         mkdir -p "$(dirname "$d")"
         sed -e "s|__HOME__|$HOME|g" \
-            -e "s|__THERMAL_ZONE__|${THERMAL_ZONE:-0}|g" "$src/$f" > "$d"
+            -e "s|__THERMAL_ZONE__|${THERMAL_ZONE:-0}|g" \
+            -e "s|__PANEL_SCALE__|${PANEL_SCALE:-1}|g" "$src/$f" > "$d"
     done
 }
 
@@ -195,6 +229,13 @@ deploy_configs() {
 
     THERMAL_ZONE=$(detect_thermal_zone)
     ok "waybar temperature pinned to thermal_zone$THERMAL_ZONE ($(cat "/sys/class/thermal/thermal_zone$THERMAL_ZONE/type" 2>/dev/null || echo 'type unknown'))"
+
+    PANEL_SCALE=$(detect_panel_scale)
+    if [ "$PANEL_SCALE" = 1 ]; then
+        ok "panel scale 1 (standard-DPI panel, or panel not detected)"
+    else
+        ok "HiDPI panel detected — output scale set to $PANEL_SCALE"
+    fi
 
     # First-run backups of app config dirs we own
     for app in sway waybar foot rofi swaync qt6ct; do
@@ -254,6 +295,37 @@ deploy_configs() {
     if [ ! -L "$cfg/rice/active" ]; then
         ln -sfn "$cfg/rice/themes/dark" "$cfg/rice/active"
     fi
+
+    # Runtime overrides file, included last by the sway config. Created empty
+    # if absent and NEVER overwritten — this is the Settings app's file, and
+    # keeping install.sh out of it is what stops runtime changes and the
+    # git-tracked repo from fighting.
+    if [ ! -f "$cfg/rice/settings.conf" ]; then
+        cat > "$cfg/rice/settings.conf" <<'EOF'
+# Runtime overrides, written by the Settings app ($mod+Shift+S).
+# Included last by ~/.config/sway/config, so anything here wins over the
+# generated defaults. install.sh never touches this file.
+# Safe to empty or delete to fall back to the repo defaults.
+#
+# Syntax note: sway does NOT accept a trailing "#" comment on a command line.
+#   output eDP-1 scale 2      <- fine
+#   output eDP-1 scale 2  # hi <- parse error
+# Put comments on their own line. Check your edits with:
+#   ~/.config/rice/scripts/validate-config.sh
+# (plain `sway --validate` does NOT report errors inside included files)
+EOF
+        ok "created ~/.config/rice/settings.conf (Settings app overrides)"
+    else
+        ok "kept your existing settings.conf overrides"
+    fi
+
+    # Session entry so the display manager offers "Sway (rice)" — the wrapper
+    # exports the Qt/Electron env that environment.d cannot reliably deliver
+    # to sway-launched apps (audit finding F4).
+    mkdir -p "$HOME/.local/share/wayland-sessions"
+    sed "s|__HOME__|$HOME|g" "$repo/config/wayland-sessions/sway-rice.desktop" \
+        > "$HOME/.local/share/wayland-sessions/sway-rice.desktop"
+    ok "session entry installed — pick 'Sway (rice)' at the login screen"
 
     # First-boot wallpaper links: theme-toggle.sh maintains these on every
     # switch, but on a fresh install nothing has toggled yet, so create them

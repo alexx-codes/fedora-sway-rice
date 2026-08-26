@@ -153,6 +153,18 @@ if [ -n "${WAYLAND_DISPLAY:-}" ] && [ "${XDG_CURRENT_DESKTOP:-}" = "sway" ]; the
     done
 fi
 
+sect "Sway config validity (including included files)"
+if [ -x "$RICE_REPO/scripts/validate-config.sh" ] && command -v sway >/dev/null 2>&1; then
+    if out=$("$RICE_REPO/scripts/validate-config.sh" "$HOME/.config/sway/config" 2>&1); then
+        pass "${out#config valid: }"
+    else
+        fail "sway config has errors:"
+        printf '%s\n' "$out" | sed 's/^/       /'
+    fi
+else
+    warn "cannot validate config (sway not installed?)"
+fi
+
 sect "Theme system"
 active=$(readlink "$HOME/.config/rice/active" 2>/dev/null || true)
 if [ -n "$active" ]; then
