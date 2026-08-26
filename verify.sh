@@ -1,30 +1,129 @@
 #!/usr/bin/env bash
-# verify.sh — read-only health check for the rice + the virtualization and
-# VS Code specifics of this machine. CHANGES NOTHING; it reports what needs
-# attention and the exact command to fix it, so nothing (group membership,
-# flags) is ever changed silently.
+# verify.sh — health check, preflight, and self-repair for the rice.
+#
+#   ./verify.sh              read-only health check (default; CHANGES NOTHING)
+#   ./verify.sh --preflight  only the checks that decide whether install.sh
+#                            can succeed. install.sh runs this itself.
+#   ./verify.sh --fix        repair what is safely repairable, prompt for the
+#                            rest. Never deletes anything.
+#   ./verify.sh --fix --dry-run   show exactly what --fix would do, do nothing
+#
+# The default mode stays read-only on purpose: reporting and repairing are
+# different jobs, and the report must be trustworthy even when you don't want
+# anything touched.
 set -u
 
 c_grn=$'\033[0;32m'; c_ylw=$'\033[1;33m'; c_red=$'\033[0;31m'; c_off=$'\033[0m'
 pass() { echo "${c_grn}[PASS]${c_off} $*"; }
 warn() { echo "${c_ylw}[WARN]${c_off} $*"; }
 fail() { echo "${c_red}[FAIL]${c_off} $*"; }
+ok()   { echo "${c_grn}[ ok ]${c_off} $*"; }
+say()  { echo; echo "══ $* ══"; }
 sect() { echo; echo "── $* ──"; }
+
+RICE_REPO=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=scripts/lib-packages.sh
+. "$RICE_REPO/scripts/lib-packages.sh"
+
+MODE=health
+for a in "$@"; do
+    case "$a" in
+        --preflight) MODE=preflight ;;
+        --fix)       MODE=fix ;;
+        --dry-run)   PREFLIGHT_DRYRUN_REQUESTED=1 ;;
+        -h|--help)
+            sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) echo "unknown option: $a (try --help)" >&2; exit 2 ;;
+    esac
+done
 
 # $USER is not guaranteed to be exported (set -u aborts the whole script on
 # it), so resolve the login name once from a source that always works.
 ME=$(id -un)
 
-sect "Packages / binaries"
-for bin in sway foot waybar fuzzel swaync swaylock swayidle grim slurp \
-           wl-copy cliphist brightnessctl qt6ct starship jq; do
-    command -v "$bin" >/dev/null 2>&1 && pass "$bin" || fail "$bin missing (dnf install)"
+# shellcheck source=scripts/lib-preflight.sh
+. "$RICE_REPO/scripts/lib-preflight.sh"
+PREFLIGHT_DRYRUN=${PREFLIGHT_DRYRUN_REQUESTED:-0}
+
+if [ "$MODE" = preflight ]; then
+    preflight_check
+    exit $?
+fi
+
+if [ "$MODE" = fix ]; then
+    if [ "$PREFLIGHT_DRYRUN" = 1 ]; then
+        say "DRY RUN — nothing will be changed"
+    fi
+    preflight_check || warn "preflight found blockers; repairing what is possible anyway"
+    say "Auto-repair (safe and reversible)"
+    repair_auto
+    say "Needs your decision (trust / system-level)"
+    repair_prompted
+    say "Reported only — not repairable from here"
+    repair_report_only
+    echo
+    if [ "$PREFLIGHT_DRYRUN" = 1 ]; then
+        ok "dry run complete — nothing was changed"
+    else
+        ok "repair pass complete. Re-run ./verify.sh for a fresh health check."
+    fi
+    exit 0
+fi
+
+sect "Packages (from packages.tsv)"
+_missing_req=$(pkg_missing base deps hardware integration)
+if [ -z "$_missing_req" ]; then
+    pass "all required packages installed ($(pkg_list base deps hardware integration | wc -l) checked)"
+else
+    for p in $_missing_req; do
+        fail "$p missing — $(pkg_field "$p" 4)"
+    done
+    fail "  fix all of these at once: ./verify.sh --fix"
+fi
+for p in $(pkg_missing optional); do
+    warn "$p not installed (optional) — $(pkg_field "$p" 4)"
 done
 for bin in qs matugen swww; do
     PATH="$HOME/.cargo/bin:$PATH" command -v "$bin" >/dev/null 2>&1 \
         && pass "$bin" \
-        || warn "$bin missing (optional: quickshell=COPR, matugen/swww=cargo install; fallbacks active)"
+        || warn "$bin missing (quickshell=COPR, matugen/swww=cargo install; fallbacks active)"
 done
+
+sect "Keybindings vs installed binaries"
+# This is the automated form of "I pressed a key and nothing happened": every
+# exec target in the generated keybinds.conf is resolved back through
+# packages.tsv to the package that must provide it.
+_kb="$HOME/.config/sway/keybinds.conf"
+[ -f "$_kb" ] || _kb="$RICE_REPO/config/sway/keybinds.conf"
+if [ -f "$_kb" ]; then
+    _broken=0
+    while read -r target; do
+        case "$target" in ""|\~*|/*) continue ;; esac
+        command -v "$target" >/dev/null 2>&1 && continue
+        _pkg=$(pkg_for_binary "$target")
+        if [ -n "$_pkg" ]; then
+            fail "key binding calls '$target' — not installed (package: $_pkg)"
+        else
+            fail "key binding calls '$target' — not installed and not in packages.tsv"
+        fi
+        _broken=$((_broken + 1))
+    done < <(awk '/^bindsym|^bindswitch|^bindgesture/ {
+                    for (i = 1; i <= NF; i++)
+                        if ($i == "exec") { print $(i+1); break }
+                  }' "$_kb" | sed 's/^"//')
+    [ "$_broken" -eq 0 ] && pass "every key binding's backing binary is installed"
+else
+    warn "keybinds.conf not found — run ./install.sh --configs-only"
+fi
+
+sect "Brightness key prerequisites"
+if id -nG 2>/dev/null | tr ' ' '\n' | grep -qx video; then
+    pass "in the 'video' group"
+else
+    fail "NOT in the 'video' group — brightness keys cannot work"
+    fail "  brightnessctl writes /sys/class/backlight, granted to that group"
+    fail "  fix: ./verify.sh --fix   (or: sudo usermod -aG video $ME, then re-login)"
+fi
 
 sect "Fonts"
 if fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then

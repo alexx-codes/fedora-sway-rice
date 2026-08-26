@@ -31,12 +31,16 @@ say()  { echo; echo "==> $*"; }
 
 # ---------------------------------------------------------------- packages
 install_packages() {
-    say "Checking distro"
-    if ! grep -qi fedora /etc/os-release 2>/dev/null; then
-        err "This installer targets Fedora (dnf). Aborting."
+    # Preflight first: catch everything that would make this run fail — an
+    # atomic Fedora variant where dnf can't install at all, a held dnf lock,
+    # no network, no disk — BEFORE touching anything, rather than dying
+    # halfway and leaving a half-configured desktop.
+    if ! "$repo/verify.sh" --preflight; then
+        err "Preflight failed. Fix the blockers above, or run:"
+        err "  ./verify.sh --fix        repair what can be repaired"
+        err "  ./install.sh --configs-only   configs only, no packages"
         exit 1
     fi
-    ok "Fedora detected"
 
     say "Installing packages from packages.tsv"
     # The package list lives in packages.tsv (repo root), shared with
