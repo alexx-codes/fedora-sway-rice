@@ -90,7 +90,10 @@ step waybar pkill -USR2 -x waybar
 
 # --- 5. live-recolor open foot terminals via OSC sequences -----------------
 # New terminals pick colors up from the config include; running ones get the
-# palette pushed onto their pty (same technique pywal uses). Best-effort.
+# palette pushed onto their pty. Only ptys actually owned by a foot process
+# are touched: a blanket /dev/pts/* write would also inject escape bytes
+# into e.g. a `virsh console` session's guest serial console. The mapping
+# goes foot pid -> its /dev/ptmx fds -> fdinfo "tty-index:" -> /dev/pts/N.
 build_seq() {
     local s=""
     local i hexvar
@@ -101,8 +104,19 @@ build_seq() {
     s+="\033]10;#$FG\007\033]11;#$BG\007\033]12;#$FG\007"
     printf '%b' "$s"
 }
+foot_ptys() { # foot_ptys <process-name>
+    local pid fd idx
+    for pid in $(pgrep -x "$1" 2>/dev/null); do
+        for fd in /proc/"$pid"/fd/*; do
+            [ "$(readlink "$fd" 2>/dev/null)" = /dev/ptmx ] || continue
+            idx=$(awk '/^tty-index:/ {print $2}' \
+                "/proc/$pid/fdinfo/${fd##*/}" 2>/dev/null)
+            [ -n "$idx" ] && echo "/dev/pts/$idx"
+        done
+    done | sort -u
+}
 seq_data="$(build_seq)"
-for pts in /dev/pts/[0-9]*; do
+for pts in $(foot_ptys foot); do
     [ -w "$pts" ] && printf '%s' "$seq_data" > "$pts" 2>/dev/null || true
 done
 
