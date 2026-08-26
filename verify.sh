@@ -115,6 +115,34 @@ else
     warn "code not installed (Microsoft repo) — skipping VS Code checks"
 fi
 
+sect "Fingerprint reader (report-only; setup via scripts/fingerprint-setup.sh)"
+if command -v lsusb >/dev/null 2>&1; then
+    fpdev=$(lsusb | grep -iE 'fingerprint|synaptics|goodix|elan|validity' || true)
+    if [ -n "$fpdev" ]; then
+        pass "reader on USB: $fpdev"
+    else
+        warn "no obvious fingerprint reader in lsusb (check the 06cb:xxxx ID manually)"
+    fi
+fi
+if command -v fprintd-list >/dev/null 2>&1; then
+    if fprintd-list "$USER" 2>&1 | grep -q 'No devices available'; then
+        warn "fprintd installed but sees no reader — check libfprint supported-devices for your USB ID"
+    elif fprintd-list "$USER" 2>/dev/null | grep -qi finger; then
+        pass "fprintd works and a fingerprint is enrolled"
+    else
+        warn "fprintd works but nothing enrolled (run scripts/fingerprint-setup.sh)"
+    fi
+else
+    warn "fprintd not installed (scripts/fingerprint-setup.sh sets it up)"
+fi
+if command -v authselect >/dev/null 2>&1; then
+    if sudo -n authselect current 2>/dev/null | grep -q with-fingerprint; then
+        pass "authselect: with-fingerprint enabled"
+    else
+        warn "authselect with-fingerprint not enabled (or sudo needs a password: re-run verify with sudo cached)"
+    fi
+fi
+
 sect "Portals (screen sharing / file pickers)"
 for p in xdg-desktop-portal-wlr xdg-desktop-portal-gtk; do
     rpm -q "$p" >/dev/null 2>&1 && pass "$p" || fail "$p not installed"
