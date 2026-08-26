@@ -314,6 +314,38 @@ EOF
         && ok "user services enabled (they start with sway-session.target)"
 }
 
+configure_lid() {
+    # Lid policy: logind's unconditional HandleLidSwitch=suspend would
+    # freeze running KVM guests mid-write. With this drop-in, sway's
+    # bindswitch routes the lid to scripts/lid.sh, which suspends normally
+    # unless VMs are running (then: lock + screen off, no suspend).
+    # This is a system-level change, so it is asked for, never silent.
+    say "Lid-switch policy (VM-aware suspend)"
+    local dropin=/etc/systemd/logind.conf.d/10-sway-rice-lid.conf
+    if [ -f "$dropin" ]; then
+        ok "logind lid drop-in already present"
+        return
+    fi
+    echo "To make lid-close VM-aware, logind must stop handling the lid itself"
+    echo "(drop-in: HandleLidSwitch=ignore). Tradeoff: outside a running sway"
+    echo "session (e.g. sitting at the login screen), closing the lid will no"
+    echo "longer suspend. Skipping keeps logind's unconditional suspend."
+    read -r -p "Install the logind lid drop-in? [y/N] " ans
+    if [[ "$ans" =~ ^[Yy] ]]; then
+        sudo mkdir -p /etc/systemd/logind.conf.d
+        sudo tee "$dropin" >/dev/null <<'EOF'
+# fedora-sway-rice: sway handles the lid (VM-aware; see scripts/lid.sh).
+# Remove this file and restart systemd-logind to restore default behavior.
+[Login]
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+EOF
+        ok "drop-in installed — takes effect after 'sudo systemctl restart systemd-logind' or the next boot"
+    else
+        warn "skipped — logind will suspend on lid close even with VMs running"
+    fi
+}
+
 post_setup() {
     say "Initial theme + shell prompt"
     # Apply GTK settings for the active mode without needing a running sway
@@ -337,6 +369,6 @@ post_setup() {
 case "$mode" in
     --configs-only)  deploy_configs; deploy_services ;;
     --packages-only) install_packages ;;
-    full|--full)     install_packages; deploy_configs; deploy_services; post_setup ;;
+    full|--full)     install_packages; deploy_configs; deploy_services; configure_lid; post_setup ;;
     *) echo "usage: install.sh [--configs-only|--packages-only]"; exit 2 ;;
 esac

@@ -86,6 +86,7 @@
 | `$mod+Shift+e` | Power menu (lock / logout / suspend / reboot / shutdown / theme) |
 | `$mod+Shift+r` | Reload the Sway configuration |
 | `$mod+Shift+slash` | This cheatsheet, as an on-screen popup |
+| `Lid close` | Suspend — unless a VM is running: then lock + screen off, no suspend |
 | `Resize mode: h/j/k/l or arrows` | Shrink/grow the window; Enter or Escape leaves resize mode |
 
 ## Notes on non-obvious choices

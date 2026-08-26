@@ -92,4 +92,7 @@ Session & power	$mod+Shift+x	-	exec swaylock -f	Lock the screen
 Session & power	$mod+Shift+e	-	exec ~/.config/rice/scripts/powermenu.sh	Power menu (lock / logout / suspend / reboot / shutdown / theme)
 Session & power	$mod+Shift+r	-	reload	Reload the Sway configuration
 Session & power	$mod+Shift+slash	-	exec ~/.config/rice/scripts/cheatsheet.sh	This cheatsheet, as an on-screen popup
+Session & power	Lid close	doc	-	Suspend — unless a VM is running: then lock + screen off, no suspend
+Session & power	lid:on	switch,locked,hide	exec ~/.config/rice/scripts/lid.sh close	-
+Session & power	lid:off	switch,locked,hide	exec ~/.config/rice/scripts/lid.sh open	-
 Session & power	Resize mode: h/j/k/l or arrows	doc	-	Shrink/grow the window; Enter or Escape leaves resize mode
