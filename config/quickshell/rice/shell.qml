@@ -1,14 +1,14 @@
 // Quickshell widgets — fedora-sway-rice
 //
 // Division of labor (confirmed): Waybar owns the bar, swaync owns
-// notifications, fuzzel owns launching. Quickshell owns only:
+// notifications, rofi owns launching. Quickshell owns only:
 //   * power menu     — `qs -c rice ipc call powermenu toggle`
 //   * volume/brightness OSD — `qs -c rice ipc call osd show <kind> <pct>`
 //   * keybind cheatsheet    — `qs -c rice ipc call cheatsheet toggle`
 //   * theme reload          — `qs -c rice ipc call theme reload`
 // Every widget is driven from shell scripts via IPC, so this file has no
 // service bindings that could break with a Quickshell update; if quickshell
-// is down entirely, the calling scripts fall back to fuzzel/notify-send.
+// is down entirely, the calling scripts fall back to rofi/notify-send.
 //
 // Colors come from ~/.config/rice/active/quickshell.json (the active theme).
 

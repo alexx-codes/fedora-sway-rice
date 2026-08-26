@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # powermenu.sh — toggle the Quickshell power menu; if quickshell is not
-# running, fall back to an equivalent fuzzel menu so power actions always work.
+# running, fall back to an equivalent rofi menu so power actions always work.
 set -u
 
 if command -v qs >/dev/null 2>&1 && qs -c rice ipc call powermenu toggle >/dev/null 2>&1; then
@@ -14,7 +14,7 @@ choice=$(printf '%s\n' \
     "  Theme toggle" \
     "󰜉  Reboot" \
     "󰐥  Shutdown" \
-    | fuzzel --dmenu --prompt " 󰐥 ❯ " --lines 6 --width 24) || exit 0
+    | rofi -dmenu -i -p "power" -l 6) || exit 0
 
 case "$choice" in
     *Lock)     swaylock -f ;;

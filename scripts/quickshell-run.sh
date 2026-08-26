@@ -10,5 +10,5 @@ for bin in qs quickshell; do
         exec "$bin" -c rice
     fi
 done
-echo "quickshell not installed; widgets disabled (fuzzel fallbacks still work)" >&2
+echo "quickshell not installed; widgets disabled (rofi fallbacks still work)" >&2
 exit 0

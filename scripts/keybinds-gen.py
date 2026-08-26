@@ -2,7 +2,7 @@
 """Generate config/sway/keybinds.conf and config/sway/KEYBINDS.md from keybinds.tsv.
 
 keybinds.tsv is the single source of truth for keybindings. The Quickshell
-popup and the fuzzel fallback read the TSV directly at runtime; this script
+popup and the rofi fallback read the TSV directly at runtime; this script
 only produces the two derived, committed files. Run it after editing the TSV:
 
     ./scripts/keybinds-gen.py
@@ -123,7 +123,7 @@ def gen_md(rows):
         "  logout is one of its options, so you can't fat-finger your session away.",
         "- Media/brightness keys carry `--locked`, so they keep working on the lock screen.",
         "- The theme toggle (`$mod+Shift+t`) switches Foot, Waybar, Quickshell, GTK, Qt,",
-        "  swaync, fuzzel, swaylock and the wallpaper in one atomic step.",
+        "  swaync, rofi, swaylock and the wallpaper in one atomic step.",
         "",
     ]
     out += notes

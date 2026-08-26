@@ -1,0 +1,123 @@
+/* GENERATED from colors.env by scripts/theme-gen.py — do not edit.
+ * Full per-theme config: rofi resolves @import relative to its own config
+ * dir, which the active-theme symlink would break, so everything lives in
+ * one file and ~/.config/rofi/config.rasi symlinks through
+ * ~/.config/rice/active/rofi.rasi. */
+
+configuration {
+    modes:              "drun,run,window";
+    font:               "JetBrainsMono Nerd Font 12";
+    show-icons:         true;
+    icon-theme:         "Papirus";
+    terminal:           "foot";
+    drun-display-format: "{name}";
+    display-drun:       "";
+    display-run:        "";
+    display-window:     "";
+    kb-cancel:          "Escape";
+}
+
+* {
+    bg:           #faf4f7;
+    bg-alt:       #f2e9f0;
+    bg-hl:        #e9dcec;
+    selected:     #d8c7e8;
+    fg:           #433a52;
+    fg-dim:       #5f5678;
+    muted:        #8c82a3;
+    border-col:   #5b6bbf;
+    accent:       #5b6bbf;
+    accent2:      #8a5fd3;
+    pink:         #c9569b;
+    urgent-col:   #d20f39;
+
+    background-color: transparent;
+    text-color:       @fg;
+    margin:           0;
+    padding:          0;
+    spacing:          0;
+}
+
+window {
+    transparency:     "real";
+    location:         center;
+    anchor:           center;
+    width:            42em;
+    border:           2px;
+    border-radius:    12px;
+    border-color:     @border-col;
+    background-color: @bg;
+    padding:          18px;
+}
+
+mainbox {
+    spacing:  12px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    spacing:          8px;
+    padding:          10px 12px;
+    border-radius:    8px;
+    background-color: @bg-alt;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent2;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder:            "Search";
+    placeholder-color:      @muted;
+    text-color:             @fg;
+    vertical-align:         0.5;
+    cursor:                 text;
+}
+
+listview {
+    lines:          12;
+    columns:        1;
+    scrollbar:      false;
+    fixed-height:   false;
+    spacing:        2px;
+    cycle:          true;
+    dynamic:        true;
+}
+
+element {
+    padding:       8px 10px;
+    spacing:       10px;
+    border-radius: 8px;
+    cursor:        pointer;
+}
+
+element normal.normal   { background-color: transparent;  text-color: @fg;     }
+element alternate.normal{ background-color: transparent;  text-color: @fg;     }
+element selected.normal { background-color: @selected;    text-color: @fg;     }
+element normal.urgent   { background-color: transparent;  text-color: @urgent-col; }
+element selected.urgent { background-color: @urgent-col;  text-color: @bg;     }
+element normal.active   { background-color: transparent;  text-color: @accent; }
+element selected.active { background-color: @accent;      text-color: @bg;     }
+
+element-icon {
+    size:           1.15em;
+    vertical-align: 0.5;
+}
+
+element-text {
+    highlight:      bold #c9569b;
+    vertical-align: 0.5;
+    text-color:     inherit;
+}
+
+message {
+    padding:          10px;
+    border-radius:    8px;
+    background-color: @bg-alt;
+}
+
+textbox {
+    text-color: @fg-dim;
+}

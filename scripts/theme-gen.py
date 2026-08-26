@@ -2,7 +2,7 @@
 """Generate per-application theme files from themes/<mode>/colors.env.
 
 colors.env is the single palette definition per mode. This script derives the
-app-specific color files (foot, waybar, sway, swaync, fuzzel, swaylock,
+app-specific color files (foot, waybar, sway, swaync, rofi, swaylock,
 quickshell, qt6ct) so no app config ever hand-codes a color twice.
 
 It also enforces the legibility rule: WCAG contrast of text-bearing colors
@@ -113,48 +113,147 @@ def gen_sway(t):
     return "\n".join(l) + "\n"
 
 
-FUZZEL_BASE = """\
-# GENERATED from colors.env by scripts/theme-gen.py — full config per theme
-# (fuzzel's `include` needs >=1.10, so we generate the whole file instead;
-# ~/.config/fuzzel/fuzzel.ini is a symlink through ~/.config/rice/active/).
-[main]
-font=JetBrainsMono Nerd Font:size=12
-prompt=" ❯ "
-icon-theme=Papirus
-terminal=foot -e
-width=42
-lines=12
-horizontal-pad=18
-vertical-pad=12
-inner-pad=6
-line-height=24
+ROFI_BASE = """\
+/* GENERATED from colors.env by scripts/theme-gen.py — do not edit.
+ * Full per-theme config: rofi resolves @import relative to its own config
+ * dir, which the active-theme symlink would break, so everything lives in
+ * one file and ~/.config/rofi/config.rasi symlinks through
+ * ~/.config/rice/active/rofi.rasi. */
 
-[border]
-width=2
-radius=12
+configuration {
+    modes:              "drun,run,window";
+    font:               "JetBrainsMono Nerd Font 12";
+    show-icons:         true;
+    icon-theme:         "Papirus";
+    terminal:           "foot";
+    drun-display-format: "{name}";
+    display-drun:       "";
+    display-run:        "";
+    display-window:     "";
+    kb-cancel:          "Escape";
+}
+
 """
 
 
-def gen_fuzzel(t):
-    # ONLY the color keys fuzzel has supported since 1.9 are emitted here.
-    # An unrecognized key in [colors] is FATAL — fuzzel aborts at config
-    # parse and never launches, which would take out the launcher, the
-    # clipboard picker, and the power-menu/cheatsheet fallbacks at once.
-    # prompt/input/placeholder/counter are newer additions and are
-    # deliberately omitted; they inherit `text`, which is already themed.
-    a = "ff"  # opaque
-    l = [
-        FUZZEL_BASE,
-        "[colors]",
-        f"background={t['BG']}f2",
-        f"text={t['FG']}{a}",
-        f"match={t['PINK']}{a}",
-        f"selection={t['BG_SEL']}{a}",
-        f"selection-text={t['FG']}{a}",
-        f"selection-match={t['PINK']}{a}",
-        f"border={t['ACCENT']}{a}",
-    ]
-    return "\n".join(l) + "\n"
+def gen_rofi(t):
+    """Full rofi .rasi theme for one palette.
+
+    Colors are declared once in a `*` block and referenced by property, which
+    is how rofi themes inherit — every widget below pulls from these, so the
+    palette can never be half-applied.
+    """
+    c = {k: f"#{t[v]}" for k, v in [
+        ("bg", "BG"), ("bg_alt", "BG_ALT"), ("bg_hl", "BG_HL"),
+        ("sel", "BG_SEL"), ("fg", "FG"), ("fg_dim", "FG_DIM"),
+        ("muted", "MUTED"), ("border", "BORDER"), ("accent", "ACCENT"),
+        ("accent2", "ACCENT2"), ("pink", "PINK"), ("red", "RED"),
+    ]}
+    return ROFI_BASE + f"""* {{
+    bg:           {c['bg']};
+    bg-alt:       {c['bg_alt']};
+    bg-hl:        {c['bg_hl']};
+    selected:     {c['sel']};
+    fg:           {c['fg']};
+    fg-dim:       {c['fg_dim']};
+    muted:        {c['muted']};
+    border-col:   {c['accent']};
+    accent:       {c['accent']};
+    accent2:      {c['accent2']};
+    pink:         {c['pink']};
+    urgent-col:   {c['red']};
+
+    background-color: transparent;
+    text-color:       @fg;
+    margin:           0;
+    padding:          0;
+    spacing:          0;
+}}
+
+window {{
+    transparency:     "real";
+    location:         center;
+    anchor:           center;
+    width:            42em;
+    border:           2px;
+    border-radius:    12px;
+    border-color:     @border-col;
+    background-color: @bg;
+    padding:          18px;
+}}
+
+mainbox {{
+    spacing:  12px;
+    children: [ inputbar, listview ];
+}}
+
+inputbar {{
+    spacing:          8px;
+    padding:          10px 12px;
+    border-radius:    8px;
+    background-color: @bg-alt;
+    children:         [ prompt, entry ];
+}}
+
+prompt {{
+    text-color: @accent2;
+    vertical-align: 0.5;
+}}
+
+entry {{
+    placeholder:            "Search";
+    placeholder-color:      @muted;
+    text-color:             @fg;
+    vertical-align:         0.5;
+    cursor:                 text;
+}}
+
+listview {{
+    lines:          12;
+    columns:        1;
+    scrollbar:      false;
+    fixed-height:   false;
+    spacing:        2px;
+    cycle:          true;
+    dynamic:        true;
+}}
+
+element {{
+    padding:       8px 10px;
+    spacing:       10px;
+    border-radius: 8px;
+    cursor:        pointer;
+}}
+
+element normal.normal   {{ background-color: transparent;  text-color: @fg;     }}
+element alternate.normal{{ background-color: transparent;  text-color: @fg;     }}
+element selected.normal {{ background-color: @selected;    text-color: @fg;     }}
+element normal.urgent   {{ background-color: transparent;  text-color: @urgent-col; }}
+element selected.urgent {{ background-color: @urgent-col;  text-color: @bg;     }}
+element normal.active   {{ background-color: transparent;  text-color: @accent; }}
+element selected.active {{ background-color: @accent;      text-color: @bg;     }}
+
+element-icon {{
+    size:           1.15em;
+    vertical-align: 0.5;
+}}
+
+element-text {{
+    highlight:      bold {c['pink']};
+    vertical-align: 0.5;
+    text-color:     inherit;
+}}
+
+message {{
+    padding:          10px;
+    border-radius:    8px;
+    background-color: @bg-alt;
+}}
+
+textbox {{
+    text-color: @fg-dim;
+}}
+"""
 
 
 def gen_swaylock(t):
@@ -240,7 +339,7 @@ def main():
         (mode_dir / "waybar.css").write_text(gen_css(t))
         (mode_dir / "swaync-theme.css").write_text(gen_css(t))
         (mode_dir / "sway-colors.conf").write_text(gen_sway(t))
-        (mode_dir / "fuzzel.ini").write_text(gen_fuzzel(t))
+        (mode_dir / "rofi.rasi").write_text(gen_rofi(t))
         (mode_dir / "swaylock.conf").write_text(gen_swaylock(t))
         (mode_dir / "quickshell.json").write_text(gen_quickshell(t))
         (mode_dir / "qt6ct-colors.conf").write_text(gen_qt6ct(t))

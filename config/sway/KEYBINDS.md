@@ -16,12 +16,10 @@
 | `$mod+space` | Switch focus between tiled and floating windows |
 | `$mod+h / j / k / l` | Move focus left / down / up / right (arrow keys work too) |
 | `$mod+Shift+h / j / k / l` | Move the focused window left / down / up / right (arrows too) |
-| `$mod+b` | Split horizontally: next window opens to the right |
 | `$mod+v` | Split vertically: next window opens below |
 | `$mod+s` | Stacking layout (windows pile up, titles visible) |
 | `$mod+w` | Tabbed layout (windows become tabs) |
 | `$mod+e` | Back to normal split layout |
-| `$mod+a` | Focus the parent container (select a whole split) |
 | `$mod+r` | Enter resize mode (h/j/k/l or arrows resize, Esc exits) |
 | `$mod+Shift+minus` | Send the focused window to the scratchpad |
 | `$mod+minus` | Show / cycle / hide scratchpad windows |
@@ -42,11 +40,12 @@
 | Keys | Action |
 |------|--------|
 | `$mod+Return` | Open a terminal (Foot) on the current workspace |
-| `$mod+d` | App launcher (fuzzel) |
+| `$mod+a` | App launcher (rofi) |
 | `$mod+Shift+c` | Jump to workspace 2 and launch/focus VS Code |
-| `$mod+Shift+w` | Jump to workspace 3 and launch/focus the browser |
+| `$mod+b` | Open your default browser (whatever xdg-settings reports) |
 | `$mod+Shift+v` | Jump to workspace 4 and launch/focus virt-manager |
-| `$mod+p` | Clipboard history picker (cliphist via fuzzel) |
+| `$mod+Shift+s` | Open the Settings app (theme, wallpaper, display, keys, system info) |
+| `$mod+p` | Clipboard history picker (cliphist via rofi) |
 | `$mod+n` | Toggle the notification / control center panel |
 | `$mod+o` | Toggle the on-screen keyboard (squeekboard, for touch) |
 
@@ -127,4 +126,4 @@ silently, so a missing package or permission problem says so.
   logout is one of its options, so you can't fat-finger your session away.
 - Media/brightness keys carry `--locked`, so they keep working on the lock screen.
 - The theme toggle (`$mod+Shift+t`) switches Foot, Waybar, Quickshell, GTK, Qt,
-  swaync, fuzzel, swaylock and the wallpaper in one atomic step.
+  swaync, rofi, swaylock and the wallpaper in one atomic step.

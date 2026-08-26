@@ -7,13 +7,14 @@
 #   hide     -> bindsym-only row: emitted into sway config, hidden from docs
 # Edit this file, then run scripts/keybinds-gen.py to regenerate
 # config/sway/keybinds.conf and config/sway/KEYBINDS.md. The Quickshell popup
-# and fuzzel fallback read this file directly at runtime, so they can't drift.
+# and rofi fallback read this file directly at runtime, so they can't drift.
 Launching apps	$mod+Return	-	exec foot	Open a terminal (Foot) on the current workspace
-Launching apps	$mod+d	-	exec fuzzel	App launcher (fuzzel)
+Launching apps	$mod+a	-	exec rofi -show drun	App launcher (rofi)
 Launching apps	$mod+Shift+c	-	exec ~/.config/rice/scripts/launch-or-focus.sh 2 '^(code|Code)$' code --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations	Jump to workspace 2 and launch/focus VS Code
-Launching apps	$mod+Shift+w	-	exec ~/.config/rice/scripts/launch-or-focus.sh 3 '^(firefox|org.mozilla.firefox)$' firefox	Jump to workspace 3 and launch/focus the browser
+Launching apps	$mod+b	-	exec ~/.config/rice/scripts/browser.sh	Open your default browser (whatever xdg-settings reports)
 Launching apps	$mod+Shift+v	-	exec ~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager	Jump to workspace 4 and launch/focus virt-manager
-Launching apps	$mod+p	-	exec ~/.config/rice/scripts/clipboard-pick.sh	Clipboard history picker (cliphist via fuzzel)
+Launching apps	$mod+Shift+s	-	exec rice-settings	Open the Settings app (theme, wallpaper, display, keys, system info)
+Launching apps	$mod+p	-	exec ~/.config/rice/scripts/clipboard-pick.sh	Clipboard history picker (cliphist via rofi)
 Launching apps	$mod+n	-	exec swaync-client -t -sw	Toggle the notification / control center panel
 Launching apps	$mod+o	-	exec ~/.config/rice/scripts/osk.sh	Toggle the on-screen keyboard (squeekboard, for touch)
 Window management	$mod+Shift+q	-	kill	Close the focused window
@@ -38,12 +39,10 @@ Window management	$mod+Shift+Left	hide	move left	-
 Window management	$mod+Shift+Down	hide	move down	-
 Window management	$mod+Shift+Up	hide	move up	-
 Window management	$mod+Shift+Right	hide	move right	-
-Window management	$mod+b	-	splith	Split horizontally: next window opens to the right
 Window management	$mod+v	-	splitv	Split vertically: next window opens below
 Window management	$mod+s	-	layout stacking	Stacking layout (windows pile up, titles visible)
 Window management	$mod+w	-	layout tabbed	Tabbed layout (windows become tabs)
 Window management	$mod+e	-	layout toggle split	Back to normal split layout
-Window management	$mod+a	-	focus parent	Focus the parent container (select a whole split)
 Window management	$mod+r	-	mode "resize"	Enter resize mode (h/j/k/l or arrows resize, Esc exits)
 Window management	$mod+Shift+minus	-	move scratchpad	Send the focused window to the scratchpad
 Window management	$mod+minus	-	scratchpad show	Show / cycle / hide scratchpad windows

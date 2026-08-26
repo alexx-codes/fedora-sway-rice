@@ -40,7 +40,7 @@ esac
 
 tdir="$THEMES/$target"
 for f in colors.env foot.ini waybar.css sway-colors.conf swaync-theme.css \
-         fuzzel.ini swaylock.conf quickshell.json qt6ct-colors.conf; do
+         rofi.rasi swaylock.conf quickshell.json qt6ct-colors.conf; do
     if [ ! -f "$tdir/$f" ]; then
         echo "theme '$target' is incomplete: missing $f — aborting, nothing changed" >&2
         exit 1

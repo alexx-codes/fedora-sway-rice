@@ -5,7 +5,7 @@ coding and QEMU/KVM work. Two first-class palettes — **Tokyo Night** (dark,
 default) and **Pastel Cat** (light) — with a single keybind that switches
 every component at once. Stability first: everything supervised runs as a
 systemd user service, daily-critical paths use official-repo packages, and
-the fancy layer (Quickshell) degrades to fuzzel fallbacks instead of
+the fancy layer (Quickshell) degrades to rofi fallbacks instead of
 breaking.
 
 ## Install
@@ -30,8 +30,8 @@ that keeps git the single source of truth and every change diffable.
 | Compositor | sway + sway-systemd | systemd session target supervises everything (the old runit-style rice died from ad-hoc `exec_always` supervision) |
 | Terminal | foot | Wayland-native, GPU-accelerated, tiny |
 | Bar | Waybar | workspaces, clock, tray + prominent CPU/RAM/temp/net for VM load, running-VM count |
-| Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — all IPC-driven with fuzzel fallbacks |
-| Launcher | fuzzel | official repo, rock solid; deliberately *not* Quickshell |
+| Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — all IPC-driven with rofi fallbacks |
+| Launcher | rofi-wayland | official repo; also the dmenu backend for the clipboard, power menu and cheatsheet fallbacks |
 | Notifications | SwayNotificationCenter | daemon + control center in one official package (chosen over mako for the panel) |
 | Lock | swaylock | plain swaylock over swaylock-effects: the fork only lives in stale personal COPRs |
 | Idle | swayidle | lock 10 min, screen off 15 min, lock-before-sleep |
@@ -39,7 +39,7 @@ that keeps git the single source of truth and every change diffable.
 | Screenshots | grim + slurp + wrapper | area/full/window, clipboard + `~/Pictures/Screenshots` |
 | Clipboard | cliphist | text+image history, `$mod+p` picker |
 | Theming | matugen (cargo) + generators | see below |
-| GTK/Qt | adw-gtk3 + qt6ct + nwg-look | both toolkits follow the toggle |
+| GTK/Qt | adw-gtk3 + qt6ct | both toolkits follow the toggle |
 | Portals | xdg-desktop-portal-wlr/-gtk | screen share, file pickers, dark/light for libadwaita |
 | Polkit | polkit-gnome (or lxqt) | GUI privilege prompts (virt-manager) |
 | Prompt | starship | cosmetic; follows terminal palette |
@@ -55,7 +55,7 @@ themes/light/colors.env   ← single palette definition (Pastel Cat, hand-define
         │ scripts/theme-gen.py  (contrast gate: fails the build if FG/BG < 7:1
         ▼                        or any text color < 3:1)
 themes/<mode>/{foot.ini, waybar.css, sway-colors.conf, swaync-theme.css,
-               fuzzel.ini, swaylock.conf, quickshell.json, qt6ct-colors.conf}
+               rofi.rasi, swaylock.conf, quickshell.json, qt6ct-colors.conf}
 ```
 
 At runtime `~/.config/rice/active` is a symlink to the deployed
@@ -81,12 +81,12 @@ colors are hand-curated in both modes and gated on WCAG contrast.
 `keybinds.tsv` is the single source of truth. It generates
 `config/sway/keybinds.conf` and [`config/sway/KEYBINDS.md`](config/sway/KEYBINDS.md)
 (via `scripts/keybinds-gen.py`), and the `$mod+Shift+/` popup (Quickshell,
-fuzzel fallback) reads the same TSV at runtime. The generator also fails
+rofi fallback) reads the same TSV at runtime. The generator also fails
 the build if any bind directive appears in a sway config file outside the
 generated one, so the popup and docs can't silently drift; the one allowed
 exception is bindsym inside a mode block (resize mode), which the TSV
 documents with a doc row. Conventions kept: `$mod+Return` terminal,
-`$mod+Shift+q` kill, `$mod+1…0` workspaces, `$mod+d` launcher.
+`$mod+Shift+q` kill, `$mod+1…0` workspaces, `$mod+a` launcher, `$mod+b` browser.
 
 Workspaces: **1** terminal · **2** VS Code · **3** browser · **4** VMs ·
 5–9 free · 10 misc. `$mod+Shift+c/w/v` jump to 2/3/4 and launch the app if
@@ -110,4 +110,4 @@ it isn't running.
 - Waybar temperature reading wrong sensor → `verify.sh` lists hwmon paths;
   set `hwmon-path` in `config/waybar/config.jsonc`.
 - Quickshell broken after a Fedora Qt update → COPR lag; everything falls
-  back to fuzzel until the COPR rebuilds.
+  back to rofi until the COPR rebuilds.
