@@ -55,6 +55,25 @@ input type:touchpad {
     drag enabled
 }
 
+# Touchscreen: pin touch input to the internal panel so coordinates stay
+# correct when an external monitor extends the layout (unmapped touch is
+# stretched across the whole output arrangement). Tap-to-click etc. need no
+# config — touch acts as a direct pointer. Text entry via touch comes from
+# squeekboard ($mod+o or the bar's keyboard button); see osk.sh.
+input type:touch {
+    map_to_output eDP-1
+    events enabled
+}
+
+# TrackPoint (and other non-touchpad pointers): hold the middle button and
+# nudge the stick to scroll — the classic ThinkPad gesture. A plain middle
+# CLICK (press+release without motion) still pastes as usual; only
+# hold-and-move turns into scrolling.
+input type:pointer {
+    scroll_method on_button_down
+    scroll_button BTN_MIDDLE
+}
+
 input type:keyboard {
     xkb_layout us
     repeat_delay 300

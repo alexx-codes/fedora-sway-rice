@@ -22,6 +22,7 @@
         "backlight",
         "battery",
         "tray",
+        "custom/osk",
         "custom/notification",
         "custom/power"
     ],
@@ -151,6 +152,15 @@
         },
         "on-click": "swaync-client -t -sw",
         "tooltip": false
+    },
+
+    "custom/osk": {
+        // Tap target for the on-screen keyboard — the one control that must
+        // be reachable by touch alone (a keybind can't summon a keyboard
+        // when there's no keyboard).
+        "format": "󰌌",
+        "tooltip": false,
+        "on-click": "~/.config/rice/scripts/osk.sh"
     },
 
     "custom/power": {

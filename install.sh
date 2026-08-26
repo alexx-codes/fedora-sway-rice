@@ -63,7 +63,7 @@ install_packages() {
         qt6ct adw-gtk3-theme papirus-icon-theme
         starship cargo jq python3 unzip
         fontawesome-fonts google-noto-color-emoji-fonts
-        polkit
+        polkit squeekboard
     )
     # dnf5 (F41+) and dnf4 (F40 and older) spell "keep going past a missing
     # package" differently; --skip-unavailable is dnf5-only and aborts dnf4.
@@ -310,7 +310,7 @@ EOF
     systemctl --user enable \
         waybar.service swaync.service swayidle.service quickshell.service \
         wallpaper-daemon.service wallpaper-set.service polkit-agent.service \
-        cliphist-text.service cliphist-image.service 2>/dev/null \
+        cliphist-text.service cliphist-image.service squeekboard.service 2>/dev/null \
         && ok "user services enabled (they start with sway-session.target)"
 }
 

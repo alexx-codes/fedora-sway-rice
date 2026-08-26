@@ -63,6 +63,7 @@ window#waybar {
 #backlight,
 #battery,
 #tray,
+#custom-osk,
 #custom-notification,
 #custom-power {
     padding: 0 9px;
@@ -79,6 +80,7 @@ window#waybar {
 #pulseaudio      { color: @pink; }
 #backlight       { color: @orange; }
 #battery         { color: @green; }
+#custom-osk      { color: @fg-dim; }
 #custom-notification { color: @fg-dim; }
 #custom-power    { color: @red; }
 

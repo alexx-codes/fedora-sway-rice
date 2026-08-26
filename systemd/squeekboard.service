@@ -1,0 +1,16 @@
+# squeekboard — on-screen keyboard for the touchscreen (official Fedora
+# package; wvkbd would need a source build). Starts hidden; visibility is
+# toggled over D-Bus by scripts/osk.sh ($mod+o / the bar's keyboard button).
+[Unit]
+Description=squeekboard on-screen keyboard
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/squeekboard
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=sway-session.target

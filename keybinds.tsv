@@ -15,6 +15,7 @@ Launching apps	$mod+Shift+w	-	exec ~/.config/rice/scripts/launch-or-focus.sh 3 '
 Launching apps	$mod+Shift+v	-	exec ~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager	Jump to workspace 4 and launch/focus virt-manager
 Launching apps	$mod+p	-	exec ~/.config/rice/scripts/clipboard-pick.sh	Clipboard history picker (cliphist via fuzzel)
 Launching apps	$mod+n	-	exec swaync-client -t -sw	Toggle the notification / control center panel
+Launching apps	$mod+o	-	exec ~/.config/rice/scripts/osk.sh	Toggle the on-screen keyboard (squeekboard, for touch)
 Window management	$mod+Shift+q	-	kill	Close the focused window
 Window management	$mod+f	-	fullscreen toggle	Toggle fullscreen for the focused window
 Window management	$mod+Shift+space	-	floating toggle	Toggle floating for the focused window
@@ -69,6 +70,9 @@ Workspaces	$mod+Shift+8	hide	move container to workspace $ws8; workspace $ws8	-
 Workspaces	$mod+Shift+9	hide	move container to workspace $ws9; workspace $ws9	-
 Workspaces	$mod+Shift+0	hide	move container to workspace $ws10; workspace $ws10	-
 Workspaces	$mod+Tab	-	workspace back_and_forth	Bounce to the previously focused workspace
+Workspaces	3-finger swipe ←/→	doc	-	Switch to the next / previous workspace (touchpad)
+Workspaces	swipe:3:left	gesture,hide	workspace next	-
+Workspaces	swipe:3:right	gesture,hide	workspace prev	-
 Workspaces	$mod+Ctrl+Right	-	workspace next	Next workspace
 Workspaces	$mod+Ctrl+Left	-	workspace prev	Previous workspace
 Screenshots	Print	-	exec ~/.config/rice/scripts/screenshot.sh area	Select an area: copy to clipboard and save to ~/Pictures/Screenshots

@@ -33,6 +33,7 @@
 | `$mod+1 … $mod+0` | Switch to workspace 1–10 (1=terminal, 2=code, 3=web, 4=VMs) |
 | `$mod+Shift+1 … 0` | Move the focused window to workspace 1–10 and follow it |
 | `$mod+Tab` | Bounce to the previously focused workspace |
+| `3-finger swipe ←/→` | Switch to the next / previous workspace (touchpad) |
 | `$mod+Ctrl+Right` | Next workspace |
 | `$mod+Ctrl+Left` | Previous workspace |
 
@@ -47,6 +48,7 @@
 | `$mod+Shift+v` | Jump to workspace 4 and launch/focus virt-manager |
 | `$mod+p` | Clipboard history picker (cliphist via fuzzel) |
 | `$mod+n` | Toggle the notification / control center panel |
+| `$mod+o` | Toggle the on-screen keyboard (squeekboard, for touch) |
 
 ## Media & brightness
 
