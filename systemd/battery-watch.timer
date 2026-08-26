@@ -1,0 +1,13 @@
+# Fires the low-battery check every 2 minutes while the session runs.
+# Waybar's battery module only recolors itself; this is the warning that
+# actually notifies (25% once per discharge, <=10% critical + repeated).
+[Unit]
+Description=Low-battery notification timer
+PartOf=graphical-session.target
+
+[Timer]
+OnActiveSec=30
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=sway-session.target

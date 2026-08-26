@@ -1,0 +1,8 @@
+# One battery check; battery-watch.timer schedules it. See battery-watch.sh.
+[Unit]
+Description=Low-battery notification check
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/rice/scripts/battery-watch.sh

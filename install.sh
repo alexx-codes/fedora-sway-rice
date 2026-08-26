@@ -310,7 +310,8 @@ EOF
     systemctl --user enable \
         waybar.service swaync.service swayidle.service quickshell.service \
         wallpaper-daemon.service wallpaper-set.service polkit-agent.service \
-        cliphist-text.service cliphist-image.service squeekboard.service 2>/dev/null \
+        cliphist-text.service cliphist-image.service squeekboard.service \
+        battery-watch.timer 2>/dev/null \
         && ok "user services enabled (they start with sway-session.target)"
 }
 
