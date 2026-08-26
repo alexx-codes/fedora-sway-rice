@@ -28,6 +28,9 @@ warn() { echo "${c_ylw}[!!]${c_off} $*"; }
 err()  { echo "${c_red}[xx]${c_off} $*"; }
 step() { echo; echo "══ $* ══"; }
 
+# $USER may be unset (set -u); resolve it reliably.
+ME=$(id -un)
+
 step "1/5 Reader hardware"
 echo "USB devices that look like fingerprint readers:"
 if command -v lsusb >/dev/null 2>&1; then
@@ -47,16 +50,16 @@ if ! command -v fprintd-list >/dev/null 2>&1; then
     echo "Installing fprintd + PAM module..."
     sudo dnf install -y fprintd fprintd-pam || { err "install failed"; exit 1; }
 fi
-if fprintd-list "$USER" 2>&1 | grep -q 'No devices available'; then
+if fprintd-list "$ME" 2>&1 | grep -q 'No devices available'; then
     err "fprintd sees no reader. Check the lsusb ID against libfprint's list"
     err "before going further — this is the report-don't-assume step."
     exit 1
 fi
 ok "fprintd reaches a reader"
-fprintd-list "$USER" || true
+fprintd-list "$ME" || true
 
 step "3/5 Enroll a finger"
-if fprintd-list "$USER" 2>/dev/null | grep -qi 'right-index-finger\|left-index-finger\|fingerprint'; then
+if fprintd-list "$ME" 2>/dev/null | grep -qi 'right-index-finger\|left-index-finger\|fingerprint'; then
     ok "an enrollment already exists (fprintd-enroll to add more fingers)"
 else
     echo "Enrolling your right index finger — touch the reader repeatedly..."
