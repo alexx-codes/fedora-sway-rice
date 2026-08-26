@@ -1,0 +1,17 @@
+# Quickshell widget layer (power menu, OSD, cheatsheet popup).
+# Runs through a wrapper because the binary name varies (qs/quickshell) and
+# systemd's ExecStart search path is fixed. If quickshell isn't installed the
+# wrapper exits 0 and the fuzzel fallbacks in the calling scripts take over.
+[Unit]
+Description=Quickshell widgets
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/rice/scripts/quickshell-run.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=sway-session.target

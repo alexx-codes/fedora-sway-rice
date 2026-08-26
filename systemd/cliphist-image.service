@@ -1,0 +1,14 @@
+# Clipboard history: capture image copies (screenshots) into cliphist.
+[Unit]
+Description=cliphist image watcher
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wl-paste --type image --watch cliphist store
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=sway-session.target

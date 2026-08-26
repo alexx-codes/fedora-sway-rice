@@ -1,0 +1,103 @@
+/* Waybar — fedora-sway-rice
+ * theme.css is a symlink into ~/.config/rice/active/ (the current palette).
+ * theme-toggle.sh swaps the active dir and SIGUSR2s waybar to reload. */
+@import "theme.css";
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: alpha(@bg, 0.92);
+    color: @fg;
+    border-bottom: 2px solid @bg-hl;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    margin: 3px 2px;
+    border-radius: 8px;
+    color: @fg-dim;
+    background: transparent;
+    border: none;
+}
+
+#workspaces button.focused {
+    background: @bg-sel;
+    color: @fg;
+}
+
+#workspaces button.urgent {
+    background: @red;
+    color: @bg;
+}
+
+#mode {
+    background: @pink;
+    color: @bg;
+    padding: 0 10px;
+    margin: 3px 2px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#window {
+    color: @fg-dim;
+    padding: 0 8px;
+}
+
+#clock {
+    color: @accent2;
+    font-weight: bold;
+    padding: 0 12px;
+}
+
+#custom-vms,
+#cpu,
+#memory,
+#temperature,
+#network,
+#pulseaudio,
+#backlight,
+#battery,
+#tray,
+#custom-notification,
+#custom-power {
+    padding: 0 9px;
+    margin: 3px 2px;
+    border-radius: 8px;
+    background: alpha(@bg-hl, 0.55);
+}
+
+#custom-vms      { color: @accent2; }
+#cpu             { color: @accent; }
+#memory          { color: @teal; }
+#temperature     { color: @yellow; }
+#network         { color: @cyan; }
+#pulseaudio      { color: @pink; }
+#backlight       { color: @orange; }
+#battery         { color: @green; }
+#custom-notification { color: @fg-dim; }
+#custom-power    { color: @red; }
+
+#cpu.warning, #memory.warning, #battery.warning {
+    color: @orange;
+}
+
+#cpu.critical, #memory.critical, #temperature.critical, #battery.critical {
+    color: @bg;
+    background: @red;
+}
+
+#battery.charging {
+    color: @green;
+}
+
+tooltip {
+    background: @bg-alt;
+    color: @fg;
+    border: 1px solid @border;
+    border-radius: 8px;
+}

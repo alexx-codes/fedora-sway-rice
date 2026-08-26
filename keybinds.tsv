@@ -1,0 +1,71 @@
+# Single source of truth for all keybindings.
+# Columns (tab-separated): category	keys	flags	command	description
+# flags: comma-separated set of
+#   locked   -> bindsym --locked (works while screen is locked)
+#   to-code  -> bindsym --to-code (layout-independent)
+#   doc      -> documentation-only row: shown in KEYBINDS.md / popup, no bindsym emitted
+#   hide     -> bindsym-only row: emitted into sway config, hidden from docs
+# Edit this file, then run scripts/keybinds-gen.py to regenerate
+# config/sway/keybinds.conf and config/sway/KEYBINDS.md. The Quickshell popup
+# and fuzzel fallback read this file directly at runtime, so they can't drift.
+Launching apps	$mod+Return	-	exec foot	Open a terminal (Foot) on the current workspace
+Launching apps	$mod+d	-	exec fuzzel	App launcher (fuzzel)
+Launching apps	$mod+Shift+c	-	exec ~/.config/rice/scripts/launch-or-focus.sh 2 '^(code|Code)$' code --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations	Jump to workspace 2 and launch/focus VS Code
+Launching apps	$mod+Shift+w	-	exec ~/.config/rice/scripts/launch-or-focus.sh 3 '^(firefox|org.mozilla.firefox)$' firefox	Jump to workspace 3 and launch/focus the browser
+Launching apps	$mod+Shift+v	-	exec ~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager	Jump to workspace 4 and launch/focus virt-manager
+Launching apps	$mod+p	-	exec ~/.config/rice/scripts/clipboard-pick.sh	Clipboard history picker (cliphist via fuzzel)
+Launching apps	$mod+n	-	exec swaync-client -t -sw	Toggle the notification / control center panel
+Window management	$mod+Shift+q	-	kill	Close the focused window
+Window management	$mod+f	-	fullscreen toggle	Toggle fullscreen for the focused window
+Window management	$mod+Shift+space	-	floating toggle	Toggle floating for the focused window
+Window management	$mod+space	-	focus mode_toggle	Switch focus between tiled and floating windows
+Window management	$mod+h / j / k / l	doc	-	Move focus left / down / up / right (arrow keys work too)
+Window management	$mod+Shift+h / j / k / l	doc	-	Move the focused window left / down / up / right (arrows too)
+Window management	$mod+h	hide	focus left	-
+Window management	$mod+j	hide	focus down	-
+Window management	$mod+k	hide	focus up	-
+Window management	$mod+l	hide	focus right	-
+Window management	$mod+Left	hide	focus left	-
+Window management	$mod+Down	hide	focus down	-
+Window management	$mod+Up	hide	focus up	-
+Window management	$mod+Right	hide	focus right	-
+Window management	$mod+Shift+h	hide	move left	-
+Window management	$mod+Shift+j	hide	move down	-
+Window management	$mod+Shift+k	hide	move up	-
+Window management	$mod+Shift+l	hide	move right	-
+Window management	$mod+Shift+Left	hide	move left	-
+Window management	$mod+Shift+Down	hide	move down	-
+Window management	$mod+Shift+Up	hide	move up	-
+Window management	$mod+Shift+Right	hide	move right	-
+Window management	$mod+b	-	splith	Split horizontally: next window opens to the right
+Window management	$mod+v	-	splitv	Split vertically: next window opens below
+Window management	$mod+s	-	layout stacking	Stacking layout (windows pile up, titles visible)
+Window management	$mod+w	-	layout tabbed	Tabbed layout (windows become tabs)
+Window management	$mod+e	-	layout toggle split	Back to normal split layout
+Window management	$mod+a	-	focus parent	Focus the parent container (select a whole split)
+Window management	$mod+r	-	mode "resize"	Enter resize mode (h/j/k/l or arrows resize, Esc exits)
+Window management	$mod+Shift+minus	-	move scratchpad	Send the focused window to the scratchpad
+Window management	$mod+minus	-	scratchpad show	Show / cycle / hide scratchpad windows
+Workspaces	$mod+1 … $mod+0	doc	-	Switch to workspace 1–10 (1=terminal, 2=code, 3=web, 4=VMs)
+Workspaces	$mod+Shift+1 … 0	doc	-	Move the focused window to workspace 1–10 and follow it
+Workspaces	$mod+Tab	-	workspace back_and_forth	Bounce to the previously focused workspace
+Workspaces	$mod+Ctrl+Right	-	workspace next	Next workspace
+Workspaces	$mod+Ctrl+Left	-	workspace prev	Previous workspace
+Screenshots	Print	-	exec ~/.config/rice/scripts/screenshot.sh area	Select an area: copy to clipboard and save to ~/Pictures/Screenshots
+Screenshots	$mod+Print	-	exec ~/.config/rice/scripts/screenshot.sh full	Full screen screenshot: copy and save
+Screenshots	$mod+Shift+Print	-	exec ~/.config/rice/scripts/screenshot.sh window	Screenshot the focused window: copy and save
+Media & brightness	XF86AudioRaiseVolume	locked	exec ~/.config/rice/scripts/volume.sh up	Volume up 5% (with on-screen overlay)
+Media & brightness	XF86AudioLowerVolume	locked	exec ~/.config/rice/scripts/volume.sh down	Volume down 5%
+Media & brightness	XF86AudioMute	locked	exec ~/.config/rice/scripts/volume.sh mute	Toggle mute
+Media & brightness	XF86AudioMicMute	locked	exec ~/.config/rice/scripts/volume.sh micmute	Toggle microphone mute
+Media & brightness	XF86MonBrightnessUp	locked	exec ~/.config/rice/scripts/brightness.sh up	Screen brightness up 5%
+Media & brightness	XF86MonBrightnessDown	locked	exec ~/.config/rice/scripts/brightness.sh down	Screen brightness down 5%
+Media & brightness	XF86AudioPlay	locked	exec playerctl play-pause	Play / pause media
+Media & brightness	XF86AudioNext	locked	exec playerctl next	Next track
+Media & brightness	XF86AudioPrev	locked	exec playerctl previous	Previous track
+Theme	$mod+Shift+t	-	exec ~/.config/rice/scripts/theme-toggle.sh	Toggle dark (Tokyo Night) / light (pastel) everywhere at once
+Session & power	$mod+Shift+x	-	exec swaylock -f	Lock the screen
+Session & power	$mod+Shift+e	-	exec ~/.config/rice/scripts/powermenu.sh	Power menu (lock / logout / suspend / reboot / shutdown / theme)
+Session & power	$mod+Shift+r	-	reload	Reload the Sway configuration
+Session & power	$mod+Shift+slash	-	exec ~/.config/rice/scripts/cheatsheet.sh	This cheatsheet, as an on-screen popup
+Session & power	Resize mode: h/j/k/l or arrows	doc	-	Shrink/grow the window; Enter or Escape leaves resize mode

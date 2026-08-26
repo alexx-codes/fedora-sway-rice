@@ -1,0 +1,22 @@
+# Idle management: lock at 10 min, screen off at 15, lock before sleep.
+# `brightnessctl` is NOT used to dim: fewer moving parts, and modern panels
+# handle DPMS off cleanly. Media players inhibit idle via the standard
+# org.freedesktop.ScreenSaver interface (-w waits for the lock to be up
+# before sleep continues, so the lock screen is never racing suspend).
+[Unit]
+Description=swayidle idle/lock/suspend manager
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/swayidle -w \
+    timeout 600 'swaylock -f' \
+    timeout 900 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' \
+    before-sleep 'swaylock -f'
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=sway-session.target

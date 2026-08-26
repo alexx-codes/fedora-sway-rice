@@ -1,0 +1,89 @@
+# Sway configuration — fedora-sway-rice
+# Repo layout:
+#   config      - this file: session basics, includes, hardware inputs
+#   keybinds.conf   - GENERATED from keybinds.tsv (repo root); do not hand-edit
+#   workspaces.conf - workspace names, switching binds, app assignments
+#   windowrules.conf- floating/placement rules (virt-manager, dialogs, ...)
+#   ~/.config/rice/active/sway-colors.conf - GENERATED theme colors (dark/light)
+#
+# All services (waybar, swaync, quickshell, wallpaper, idle, clipboard, polkit)
+# run as systemd user units bound to sway-session.target — nothing is
+# supervised from this file, so a crashing component restarts on its own and
+# `systemctl --user status <unit>` always tells you what's wrong.
+
+set $mod Mod4
+set $term foot
+
+font pango:JetBrainsMono Nerd Font 10.5
+
+# Fedora ships session integration drop-ins here (sway-systemd: starts
+# sway-session.target, imports WAYLAND_DISPLAY/DISPLAY into systemd and dbus,
+# desktop portal wiring). Keep this include FIRST — it replaces the runit-style
+# supervision the old rice attempted.
+include /etc/sway/config.d/*
+
+# Safety net for setups where sway-systemd's drop-in is missing: make sure the
+# session environment reaches systemd --user and the session target starts.
+# Both commands are idempotent, so double-running them is harmless.
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP=sway
+exec systemctl --user import-environment WAYLAND_DISPLAY DISPLAY && systemctl --user start sway-session.target
+
+# ---------------------------------------------------------------- appearance
+# Theme colors are swapped atomically by ~/.config/rice/scripts/theme-toggle.sh
+include ~/.config/rice/active/sway-colors.conf
+
+default_border pixel 2
+default_floating_border pixel 2
+gaps inner 6
+gaps outer 2
+smart_gaps on
+smart_borders on
+titlebar_padding 6 3
+
+# ---------------------------------------------------------------- output
+# X1 Carbon internal panel. The 4K wallpaper is scaled by the wallpaper
+# daemon (swww/swaybg both crop-to-fill), so no output-side handling needed.
+# If your panel is HiDPI (2.8K models), uncomment the scale line.
+# output eDP-1 scale 1.5
+output eDP-1 adaptive_sync on
+
+# ---------------------------------------------------------------- input
+input type:touchpad {
+    tap enabled
+    natural_scroll enabled
+    scroll_method two_finger
+    dwt enabled
+    drag enabled
+}
+
+input type:keyboard {
+    xkb_layout us
+    repeat_delay 300
+    repeat_rate 40
+}
+
+seat seat0 xcursor_theme Adwaita 24
+
+# ---------------------------------------------------------------- behavior
+floating_modifier $mod normal
+focus_follows_mouse yes
+workspace_auto_back_and_forth no
+popup_during_fullscreen smart
+
+mode "resize" {
+    bindsym h resize shrink width 40px
+    bindsym j resize grow height 40px
+    bindsym k resize shrink height 40px
+    bindsym l resize grow width 40px
+    bindsym Left resize shrink width 40px
+    bindsym Down resize grow height 40px
+    bindsym Up resize shrink height 40px
+    bindsym Right resize grow width 40px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+# ---------------------------------------------------------------- includes
+include ~/.config/sway/workspaces.conf
+include ~/.config/sway/windowrules.conf
+include ~/.config/sway/keybinds.conf

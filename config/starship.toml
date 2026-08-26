@@ -1,0 +1,38 @@
+# starship prompt — fedora-sway-rice
+# Kept intentionally minimal and fast; colors use terminal ANSI slots so the
+# prompt follows the dark/light theme toggle automatically.
+add_newline = false
+
+format = """$directory$git_branch$git_status$python$rust$nodejs$cmd_duration$character"""
+
+[character]
+success_symbol = "[❯](bold purple)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+style = "bold blue"
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = " "
+style = "bold magenta"
+
+[git_status]
+style = "yellow"
+
+[cmd_duration]
+min_time = 2000
+style = "dimmed white"
+
+[python]
+symbol = " "
+style = "green"
+
+[rust]
+symbol = " "
+style = "red"
+
+[nodejs]
+symbol = " "
+style = "green"

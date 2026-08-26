@@ -1,0 +1,13 @@
+# Oneshot: apply the active theme's wallpaper once the swww daemon is up.
+[Unit]
+Description=Apply current wallpaper
+PartOf=graphical-session.target
+After=wallpaper-daemon.service
+Wants=wallpaper-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/rice/scripts/wallpaper-set.sh
+
+[Install]
+WantedBy=sway-session.target

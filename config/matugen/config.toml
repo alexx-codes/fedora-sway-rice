@@ -1,0 +1,15 @@
+# matugen — derives the DARK palette's UI chrome from the night wallpaper.
+# Run via scripts/theme-regen.sh from the repo root (paths are repo-relative).
+#
+# Scope note (deliberate): matugen only regenerates themes/dark/colors.env.
+# The light/pastel palette is hand-defined (a light scheme derived from a
+# dark image comes out muddy), and terminal ANSI colors stay hand-curated in
+# the template so contrast never regresses. After matugen writes colors.env,
+# theme-regen.sh runs theme-gen.py, whose contrast gate rejects any
+# generated chrome color that would hurt readability.
+
+[config]
+
+[templates.colors-env]
+input_path = "./config/matugen/colors.env.tmpl"
+output_path = "./themes/dark/colors.env"

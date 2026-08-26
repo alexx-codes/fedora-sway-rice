@@ -1,0 +1,15 @@
+# GUI polkit authentication agent — GUI privilege prompts (virt-manager
+# system connections, package tools). Wrapper picks whichever agent exists.
+[Unit]
+Description=Polkit authentication agent
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/rice/scripts/polkit-agent.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=sway-session.target
