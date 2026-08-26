@@ -48,6 +48,26 @@ Window management	$mod+Shift+minus	-	move scratchpad	Send the focused window to 
 Window management	$mod+minus	-	scratchpad show	Show / cycle / hide scratchpad windows
 Workspaces	$mod+1 … $mod+0	doc	-	Switch to workspace 1–10 (1=terminal, 2=code, 3=web, 4=VMs)
 Workspaces	$mod+Shift+1 … 0	doc	-	Move the focused window to workspace 1–10 and follow it
+Workspaces	$mod+1	hide	workspace $ws1	-
+Workspaces	$mod+2	hide	workspace $ws2	-
+Workspaces	$mod+3	hide	workspace $ws3	-
+Workspaces	$mod+4	hide	workspace $ws4	-
+Workspaces	$mod+5	hide	workspace $ws5	-
+Workspaces	$mod+6	hide	workspace $ws6	-
+Workspaces	$mod+7	hide	workspace $ws7	-
+Workspaces	$mod+8	hide	workspace $ws8	-
+Workspaces	$mod+9	hide	workspace $ws9	-
+Workspaces	$mod+0	hide	workspace $ws10	-
+Workspaces	$mod+Shift+1	hide	move container to workspace $ws1; workspace $ws1	-
+Workspaces	$mod+Shift+2	hide	move container to workspace $ws2; workspace $ws2	-
+Workspaces	$mod+Shift+3	hide	move container to workspace $ws3; workspace $ws3	-
+Workspaces	$mod+Shift+4	hide	move container to workspace $ws4; workspace $ws4	-
+Workspaces	$mod+Shift+5	hide	move container to workspace $ws5; workspace $ws5	-
+Workspaces	$mod+Shift+6	hide	move container to workspace $ws6; workspace $ws6	-
+Workspaces	$mod+Shift+7	hide	move container to workspace $ws7; workspace $ws7	-
+Workspaces	$mod+Shift+8	hide	move container to workspace $ws8; workspace $ws8	-
+Workspaces	$mod+Shift+9	hide	move container to workspace $ws9; workspace $ws9	-
+Workspaces	$mod+Shift+0	hide	move container to workspace $ws10; workspace $ws10	-
 Workspaces	$mod+Tab	-	workspace back_and_forth	Bounce to the previously focused workspace
 Workspaces	$mod+Ctrl+Right	-	workspace next	Next workspace
 Workspaces	$mod+Ctrl+Left	-	workspace prev	Previous workspace

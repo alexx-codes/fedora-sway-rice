@@ -81,9 +81,12 @@ colors are hand-curated in both modes and gated on WCAG contrast.
 `keybinds.tsv` is the single source of truth. It generates
 `config/sway/keybinds.conf` and [`config/sway/KEYBINDS.md`](config/sway/KEYBINDS.md)
 (via `scripts/keybinds-gen.py`), and the `$mod+Shift+/` popup (Quickshell,
-fuzzel fallback) reads the same TSV at runtime — the popup and the docs
-cannot drift. Conventions kept: `$mod+Return` terminal, `$mod+Shift+q` kill,
-`$mod+1…0` workspaces, `$mod+d` launcher.
+fuzzel fallback) reads the same TSV at runtime. The generator also fails
+the build if any bind directive appears in a sway config file outside the
+generated one, so the popup and docs can't silently drift; the one allowed
+exception is bindsym inside a mode block (resize mode), which the TSV
+documents with a doc row. Conventions kept: `$mod+Return` terminal,
+`$mod+Shift+q` kill, `$mod+1…0` workspaces, `$mod+d` launcher.
 
 Workspaces: **1** terminal · **2** VS Code · **3** browser · **4** VMs ·
 5–9 free · 10 misc. `$mod+Shift+c/w/v` jump to 2/3/4 and launch the app if

@@ -36,7 +36,7 @@ def parse():
             sys.exit(f"keybinds.tsv:{lineno}: expected 5 tab-separated fields, got {len(parts)}")
         cat, keys, flags, cmd, desc = (p.strip() for p in parts)
         flagset = set() if flags in ("-", "") else set(flags.split(","))
-        unknown = flagset - {"locked", "to-code", "release", "doc", "hide"}
+        unknown = flagset - {"locked", "to-code", "release", "doc", "hide", "switch", "gesture"}
         if unknown:
             sys.exit(f"keybinds.tsv:{lineno}: unknown flags {sorted(unknown)}")
         if "doc" not in flagset and (not cmd or cmd == "-"):
@@ -58,7 +58,12 @@ def gen_conf(rows):
         if r["cat"] != cur:
             cur = r["cat"]
             out += [f"# --- {cur} ---"]
-        prefix = "bindsym"
+        if "switch" in r["flags"]:
+            prefix = "bindswitch"
+        elif "gesture" in r["flags"]:
+            prefix = "bindgesture"
+        else:
+            prefix = "bindsym"
         for fl, opt in (("locked", "--locked"), ("to-code", "--to-code"), ("release", "--release")):
             if fl in r["flags"]:
                 prefix += f" {opt}"
@@ -108,11 +113,45 @@ def gen_md(rows):
     MD.write_text("\n".join(out))
 
 
+def check_drift():
+    """Fail if any bind directive lives outside the generated keybinds.conf.
+
+    keybinds.tsv is only a single source of truth if nothing binds keys
+    elsewhere. The one allowed exception is bindsym inside a mode block
+    (e.g. mode "resize"), which is documented via a doc row in the TSV.
+    """
+    import re
+
+    sway_dir = REPO / "config" / "sway"
+    bad = []
+    for f in sorted(sway_dir.glob("*.conf")) + [sway_dir / "config"]:
+        if f.name == "keybinds.conf" or not f.is_file():
+            continue
+        depth = 0
+        in_mode = False
+        for n, line in enumerate(f.read_text().splitlines(), 1):
+            s = line.strip()
+            if re.match(r'^mode\s+"', s):
+                in_mode = True
+            depth += s.count("{") - s.count("}")
+            if depth <= 0 and in_mode and "}" in s:
+                in_mode = False
+            if re.match(r"^bind(sym|switch|gesture)\b", s) and not in_mode:
+                bad.append(f"{f.relative_to(REPO)}:{n}: {s}")
+    if bad:
+        sys.exit(
+            "bind directives found outside keybinds.conf — move them into "
+            "keybinds.tsv (flags: hide/switch/gesture) so docs can't drift:\n  "
+            + "\n  ".join(bad)
+        )
+
+
 def main():
     rows = parse()
+    check_drift()
     gen_conf(rows)
     gen_md(rows)
-    print(f"wrote {CONF.relative_to(REPO)} and {MD.relative_to(REPO)} from {len(rows)} rows")
+    print(f"wrote {CONF.relative_to(REPO)} and {MD.relative_to(REPO)} from {len(rows)} rows (drift check ok)")
 
 
 if __name__ == "__main__":
