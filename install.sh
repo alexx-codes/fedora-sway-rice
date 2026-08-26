@@ -50,22 +50,45 @@ install_packages() {
     # xdg-desktop-portal-{wlr,gtk}: screenshare/screencast + file pickers
     #   and the settings portal (GTK apps follow dark/light via it).
     # adw-gtk3-theme + papirus: consistent GTK look in both palettes.
-    # qt6ct + nwg-look: Qt/GTK theme management.
+    # qt6ct: Qt theme management. (nwg-look is COPR-only on Fedora, so it is
+    #   deliberately NOT here — gsettings does the actual GTK switching.)
     # cargo: builds matugen + swww from crates.io (no extra COPRs).
+    # unzip: needed by the Nerd Font install step below.
     local pkgs=(
         sway sway-systemd swaybg swayidle swaylock
         foot waybar fuzzel SwayNotificationCenter
         grim slurp wl-clipboard cliphist
         brightnessctl playerctl pavucontrol btop
         xdg-desktop-portal-wlr xdg-desktop-portal-gtk
-        qt6ct nwg-look adw-gtk3-theme papirus-icon-theme
-        starship cargo jq python3
+        qt6ct adw-gtk3-theme papirus-icon-theme
+        starship cargo jq python3 unzip
         fontawesome-fonts google-noto-color-emoji-fonts
         polkit
     )
-    sudo dnf install -y --skip-unavailable "${pkgs[@]}" || {
+    # dnf5 (F41+) and dnf4 (F40 and older) spell "keep going past a missing
+    # package" differently; --skip-unavailable is dnf5-only and aborts dnf4.
+    local skipflag
+    if dnf --version 2>/dev/null | head -1 | grep -q '^dnf5'; then
+        skipflag="--skip-unavailable"
+    else
+        skipflag="--setopt=strict=0"
+    fi
+    sudo dnf install -y "$skipflag" "${pkgs[@]}" || {
         err "dnf install failed; fix the error above and re-run"; exit 1; }
-    ok "official-repo packages installed"
+
+    # Skipped packages are silent above, so verify each one landed and say
+    # loudly which didn't — a missing package here surfaces later as a dead
+    # unit or tofu glyphs, which is much harder to trace back.
+    local missing=()
+    for p in "${pkgs[@]}"; do
+        rpm -q "$p" >/dev/null 2>&1 || missing+=("$p")
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        warn "NOT installed (unavailable in your repos): ${missing[*]}"
+        warn "the rice degrades gracefully, but fix these before relying on the affected part"
+    else
+        ok "all ${#pkgs[@]} official-repo packages installed"
+    fi
 
     # Polkit GUI agent: package name differs across Fedora releases.
     say "Installing a GUI polkit agent"
