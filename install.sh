@@ -234,6 +234,27 @@ deploy_configs() {
         ln -sfn "$cfg/rice/themes/dark" "$cfg/rice/active"
     fi
 
+    # First-boot wallpaper links: theme-toggle.sh maintains these on every
+    # switch, but on a fresh install nothing has toggled yet, so create them
+    # here or the first session comes up wallpaper-less and swaylock loses
+    # its background image (it falls back to a solid color, but still).
+    if [ ! -e "$cfg/rice/wallpapers/current" ]; then
+        local wallname wallfile ext
+        wallname=$(sed -n 's/^WALLPAPER=//p' "$cfg/rice/active/colors.env" 2>/dev/null)
+        wallfile=""
+        for ext in jpg jpeg png; do
+            if [ -f "$cfg/rice/wallpapers/${wallname:-night}.$ext" ]; then
+                wallfile="$cfg/rice/wallpapers/${wallname:-night}.$ext"; break
+            fi
+        done
+        if [ -n "$wallfile" ]; then
+            ln -sfn "$wallfile" "$cfg/rice/wallpapers/current"
+            ln -sfn "$wallfile" "$cfg/rice/wallpapers/current-lock"
+        else
+            warn "no wallpaper file found for first boot — session starts on a solid color"
+        fi
+    fi
+
     # VS Code: desktop-entry override forces native Wayland regardless of env
     mkdir -p "$HOME/.local/share/applications"
     if [ -f /usr/share/applications/code.desktop ]; then
