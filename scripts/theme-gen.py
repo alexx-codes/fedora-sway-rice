@@ -136,20 +136,22 @@ radius=12
 
 
 def gen_fuzzel(t):
+    # ONLY the color keys fuzzel has supported since 1.9 are emitted here.
+    # An unrecognized key in [colors] is FATAL — fuzzel aborts at config
+    # parse and never launches, which would take out the launcher, the
+    # clipboard picker, and the power-menu/cheatsheet fallbacks at once.
+    # prompt/input/placeholder/counter are newer additions and are
+    # deliberately omitted; they inherit `text`, which is already themed.
     a = "ff"  # opaque
     l = [
         FUZZEL_BASE,
         "[colors]",
         f"background={t['BG']}f2",
         f"text={t['FG']}{a}",
-        f"prompt={t['ACCENT2']}{a}",
-        f"placeholder={t['MUTED']}{a}",
-        f"input={t['FG']}{a}",
         f"match={t['PINK']}{a}",
         f"selection={t['BG_SEL']}{a}",
         f"selection-text={t['FG']}{a}",
         f"selection-match={t['PINK']}{a}",
-        f"counter={t['MUTED']}{a}",
         f"border={t['ACCENT']}{a}",
     ]
     return "\n".join(l) + "\n"
