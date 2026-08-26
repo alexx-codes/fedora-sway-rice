@@ -57,6 +57,7 @@ window#waybar {
 #custom-vms,
 #cpu,
 #memory,
+#disk,
 #temperature,
 #network,
 #pulseaudio,
@@ -75,6 +76,7 @@ window#waybar {
 #custom-vms      { color: @accent2; }
 #cpu             { color: @accent; }
 #memory          { color: @teal; }
+#disk            { color: @accent2; }
 #temperature     { color: @yellow; }
 #network         { color: @cyan; }
 #pulseaudio      { color: @pink; }
@@ -84,11 +86,11 @@ window#waybar {
 #custom-notification { color: @fg-dim; }
 #custom-power    { color: @red; }
 
-#cpu.warning, #memory.warning, #battery.warning {
+#cpu.warning, #memory.warning, #disk.warning, #battery.warning {
     color: @orange;
 }
 
-#cpu.critical, #memory.critical, #temperature.critical, #battery.critical {
+#cpu.critical, #memory.critical, #disk.critical, #temperature.critical, #battery.critical {
     color: @bg;
     background: @red;
 }

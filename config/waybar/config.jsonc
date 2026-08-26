@@ -16,6 +16,7 @@
         "custom/vms",
         "cpu",
         "memory",
+        "disk",
         "temperature",
         "network",
         "pulseaudio",
@@ -84,6 +85,17 @@
         "interval": 5,
         "states": { "warning": 70, "critical": 90 },
         "on-click": "foot -e btop"
+    },
+
+    "disk": {
+        // On a 512 GB single-volume machine running qcow2 VM images, root
+        // filesystem headroom is the gauge that matters most — images grow
+        // silently until the filesystem is full.
+        "path": "/",
+        "format": "󰋊 {free}",
+        "tooltip-format": "{used} used / {total} ({percentage_used}% full)\nfree: {free}",
+        "states": { "warning": 80, "critical": 92 },
+        "interval": 60
     },
 
     "temperature": {
