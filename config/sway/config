@@ -45,7 +45,6 @@ titlebar_padding 6 3
 # daemon (swww/swaybg both crop-to-fill), so no output-side handling needed.
 # If your panel is HiDPI (2.8K models), uncomment the scale line.
 # output eDP-1 scale 1.5
-output eDP-1 adaptive_sync on
 
 # ---------------------------------------------------------------- input
 input type:touchpad {
