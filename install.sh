@@ -163,13 +163,31 @@ backup() { # backup <path>
     fi
 }
 
-deploy_tree() { # deploy_tree <src-dir> <dst-dir>  (copies + __HOME__ substitution)
+detect_thermal_zone() {
+    # Prefer the CPU package sensor; thermal_zone0 is often acpitz (chassis)
+    # on ThinkPads, which shows a plausible but wrong temperature in waybar.
+    local want tz type
+    for want in x86_pkg_temp TCPU cpu_thermal; do
+        for tz in /sys/class/thermal/thermal_zone*; do
+            [ -f "$tz/type" ] || continue
+            type=$(cat "$tz/type" 2>/dev/null)
+            if [ "$type" = "$want" ]; then
+                echo "${tz##*thermal_zone}"
+                return
+            fi
+        done
+    done
+    echo 0
+}
+
+deploy_tree() { # deploy_tree <src-dir> <dst-dir>  (copies + placeholder substitution)
     local src="$1" dst="$2"
     mkdir -p "$dst"
     (cd "$src" && find . -type f) | while read -r f; do
         local d="$dst/${f#./}"
         mkdir -p "$(dirname "$d")"
-        sed "s|__HOME__|$HOME|g" "$src/$f" > "$d"
+        sed -e "s|__HOME__|$HOME|g" \
+            -e "s|__THERMAL_ZONE__|${THERMAL_ZONE:-0}|g" "$src/$f" > "$d"
     done
 }
 
@@ -177,6 +195,9 @@ deploy_configs() {
     say "Backing up + deploying configs"
     local cfg="$HOME/.config"
     mkdir -p "$cfg"
+
+    THERMAL_ZONE=$(detect_thermal_zone)
+    ok "waybar temperature pinned to thermal_zone$THERMAL_ZONE ($(cat "/sys/class/thermal/thermal_zone$THERMAL_ZONE/type" 2>/dev/null || echo 'type unknown'))"
 
     # First-run backups of app config dirs we own
     for app in sway waybar foot fuzzel swaync qt6ct; do

@@ -86,8 +86,11 @@
     },
 
     "temperature": {
-        // Default thermal zone works on most ThinkPads; if it reads a bogus
-        // sensor, run verify.sh to list hwmon paths and set "hwmon-path" here.
+        // __THERMAL_ZONE__ is resolved at deploy time by install.sh: it scans
+        // /sys/class/thermal for the CPU package sensor (x86_pkg_temp/TCPU)
+        // instead of trusting zone 0, which on ThinkPads is often acpitz
+        // (chassis) and reads plausible-but-wrong. verify.sh reports the pick.
+        "thermal-zone": __THERMAL_ZONE__,
         "critical-threshold": 85,
         "format": "{icon} {temperatureC}°C",
         "format-icons": ["", "", ""],
