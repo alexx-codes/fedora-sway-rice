@@ -319,6 +319,24 @@ EOF
         ok "kept your existing settings.conf overrides"
     fi
 
+    # Settings app: GTK4/libadwaita, launched by $mod+Shift+S, F11/F12, and
+    # from rofi. Deployed as a package next to a thin launcher on PATH.
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+    rm -rf "$repo/settings/rice_settings/__pycache__"
+    deploy_tree "$repo/settings/rice_settings" "$cfg/rice/rice_settings"
+    sed "s|__HOME__|$HOME|g" "$repo/settings/rice-settings" \
+        > "$HOME/.local/bin/rice-settings"
+    chmod +x "$HOME/.local/bin/rice-settings"
+    # The launcher adds its own directory to sys.path, so put the package
+    # where it can find it.
+    rm -rf "$HOME/.local/bin/rice_settings"
+    cp -r "$cfg/rice/rice_settings" "$HOME/.local/bin/rice_settings"
+    rm -rf "$HOME/.local/bin/rice_settings/__pycache__" \
+           "$cfg/rice/rice_settings/__pycache__"
+    sed "s|__HOME__|$HOME|g" "$repo/settings/rice-settings.desktop" \
+        > "$HOME/.local/share/applications/rice-settings.desktop"
+    ok "Settings app installed (\$mod+Shift+S, or 'Settings' in rofi)"
+
     # Session entry so the display manager offers "Sway (rice)" — the wrapper
     # exports the Qt/Electron env that environment.d cannot reliably deliver
     # to sway-launched apps (audit finding F4).

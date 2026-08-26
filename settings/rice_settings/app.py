@@ -1,0 +1,427 @@
+"""GTK4 + libadwaita Settings app for fedora-sway-rice.
+
+Toolkit chosen deliberately over Quickshell: Quickshell is COPR-only, lags
+Fedora Qt updates, and has never been verified to run. libadwaita is in
+Fedora proper, follows the GTK dark/light setting the theme toggle already
+drives (so it themes itself), and is HiDPI-correct without extra work.
+
+All state and side effects live in backend.py, which is unit-tested without a
+display. This module is presentation only.
+"""
+from __future__ import annotations
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
+
+from . import backend as b  # noqa: E402
+
+APP_ID = "dev.rice.Settings"
+
+
+def toast(page: Adw.PreferencesPage, text: str) -> None:
+    win = page.get_root()
+    if isinstance(win, Adw.ApplicationWindow) and hasattr(win, "toaster"):
+        win.toaster.add_toast(Adw.Toast(title=text, timeout=4))
+
+
+# ---------------------------------------------------------------- Appearance
+class AppearancePage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="Appearance", icon_name="applications-graphics-symbolic")
+
+        g = Adw.PreferencesGroup(
+            title="Theme",
+            description="Switches Foot, Waybar, Quickshell, GTK, Qt, swaync, "
+                        "rofi, swaylock and the wallpaper in one step.")
+        self.add(g)
+
+        self.mode = Adw.ComboRow(title="Palette",
+                                 subtitle="Tokyo Night (dark) or Pastel Cat (light)")
+        self.mode.set_model(Gtk.StringList.new(["dark", "light"]))
+        self.mode.set_selected(0 if b.current_theme() == "dark" else 1)
+        self.mode.connect("notify::selected", self._on_mode)
+        g.add(self.mode)
+
+        self.swatches = Adw.PreferencesGroup(title="Current palette")
+        self.add(self.swatches)
+        self._swatch_row = None
+        self._draw_swatches()
+
+        note = Adw.PreferencesGroup(
+            title="Contrast",
+            description="Every palette is checked against WCAG contrast before "
+                        "it ships: terminal text must clear 7:1 and accent "
+                        "colors 3:1. A palette that fails is rejected rather "
+                        "than shipped, so text stays readable in both modes.")
+        self.add(note)
+
+    def _draw_swatches(self):
+        if self._swatch_row:
+            self.swatches.remove(self._swatch_row)
+        row = Adw.ActionRow(title="Colors")
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6,
+                      margin_top=8, margin_bottom=8)
+        for name in ("bg", "fg", "accent", "accent2", "pink", "red",
+                     "green", "yellow", "cyan"):
+            hexv = b.theme_palette().get(name)
+            if not hexv:
+                continue
+            sw = Gtk.DrawingArea(content_width=26, content_height=26,
+                                 tooltip_text=f"{name}  {hexv}")
+            rgba = Gdk.RGBA()
+            rgba.parse(hexv)
+            sw.set_draw_func(self._paint, rgba)
+            box.append(sw)
+        row.add_suffix(box)
+        self.swatches.add(row)
+        self._swatch_row = row
+
+    @staticmethod
+    def _paint(area, cr, w, h, rgba):
+        cr.set_source_rgba(rgba.red, rgba.green, rgba.blue, rgba.alpha)
+        cr.rectangle(0, 0, w, h)
+        cr.fill()
+
+    def _on_mode(self, row, _p):
+        mode = ["dark", "light"][row.get_selected()]
+        if mode == b.current_theme():
+            return
+        okd, out = b.set_theme(mode)
+        toast(self, f"Switched to {mode}" if okd else f"Theme switch reported: {out}")
+        self._draw_swatches()
+
+
+# ---------------------------------------------------------------- Wallpaper
+class WallpaperPage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="Wallpaper", icon_name="image-x-generic-symbolic")
+
+        d = b.wallpaper_dir()
+        g = Adw.PreferencesGroup(title="Wallpapers", description=f"From {d}")
+        self.add(g)
+
+        self.regen = Adw.SwitchRow(
+            title="Re-derive the palette from the wallpaper",
+            subtitle="Runs matugen, then the contrast gate. If the result "
+                     "would hurt readability it is reverted automatically and "
+                     "the wallpaper still changes. Dark mode only — a light "
+                     "palette from an arbitrary image comes out muddy.")
+        self.regen.set_active(False)
+        g.add(self.regen)
+
+        papers = b.list_wallpapers()
+        if not papers:
+            g.add(Adw.ActionRow(
+                title="No wallpapers found",
+                subtitle=f"Put images in {d} (jpg, png, webp)"))
+            return
+
+        flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
+                           max_children_per_line=4, row_spacing=10,
+                           column_spacing=10, margin_top=10, margin_bottom=10,
+                           homogeneous=True)
+        for p in papers:
+            flow.append(self._tile(p))
+        wrap = Adw.PreferencesGroup()
+        wrap.add(flow)
+        self.add(wrap)
+
+    def _tile(self, path):
+        btn = Gtk.Button(has_frame=False, tooltip_text=path.name)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        try:
+            pic = Gtk.Picture.new_for_filename(str(path))
+            pic.set_size_request(190, 110)
+            pic.set_content_fit(Gtk.ContentFit.COVER)
+            pic.add_css_class("card")
+            box.append(pic)
+        except GLib.Error:
+            box.append(Gtk.Label(label="(unreadable image)"))
+        lbl = Gtk.Label(label=path.stem, ellipsize=3, max_width_chars=22)
+        lbl.add_css_class("caption")
+        box.append(lbl)
+        btn.set_child(box)
+        btn.connect("clicked", self._apply, path)
+        return btn
+
+    def _apply(self, _btn, path):
+        okd, out = b.set_wallpaper(path)
+        if not okd:
+            toast(self, f"Could not set wallpaper: {out}")
+            return
+        if not self.regen.get_active():
+            toast(self, f"Wallpaper set to {path.name}")
+            return
+        okd, msg = b.regen_palette_from(path)
+        toast(self, msg if okd else f"Wallpaper set. {msg}")
+
+
+# ---------------------------------------------------------------- Display
+class DisplayPage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="Display", icon_name="video-display-symbolic")
+        outs = b.outputs()
+        if not outs:
+            g = Adw.PreferencesGroup(title="No outputs")
+            g.add(Adw.ActionRow(title="sway is not running",
+                                subtitle="Display settings need a live session"))
+            self.add(g)
+            return
+        for o in outs:
+            self.add(self._group(o))
+
+    def _group(self, o):
+        name = o.get("name", "?")
+        mode = o.get("current_mode") or {}
+        desc = " ".join(filter(None, [o.get("make"), o.get("model")])) or "display"
+        g = Adw.PreferencesGroup(title=name, description=desc)
+
+        g.add(Adw.ActionRow(
+            title="Resolution",
+            subtitle=f"{mode.get('width','?')}×{mode.get('height','?')} @ "
+                     f"{round(mode.get('refresh', 0) / 1000)} Hz"))
+
+        scale = Adw.ComboRow(
+            title="Scale",
+            subtitle="Integer scaling keeps XWayland apps crisp; fractional "
+                     "gives more room but softens them")
+        options = ["1", "1.25", "1.5", "1.75", "2", "2.5", "3"]
+        scale.set_model(Gtk.StringList.new(options))
+        cur = f"{o.get('scale', 1):g}"
+        scale.set_selected(options.index(cur) if cur in options else 0)
+        scale.connect("notify::selected", self._on_scale, name, options)
+        g.add(scale)
+
+        transform = Adw.ComboRow(title="Rotation")
+        tvals = ["normal", "90", "180", "270"]
+        transform.set_model(Gtk.StringList.new(tvals))
+        tcur = str(o.get("transform", "normal"))
+        transform.set_selected(tvals.index(tcur) if tcur in tvals else 0)
+        transform.connect("notify::selected", self._on_transform, name, tvals)
+        g.add(transform)
+        return g
+
+    def _on_scale(self, row, _p, name, options):
+        okd, out = b.set_output_scale(name, float(options[row.get_selected()]))
+        toast(self, f"{name} scale {options[row.get_selected()]}"
+                    if okd else f"Could not set scale: {out}")
+
+    def _on_transform(self, row, _p, name, tvals):
+        okd, out = b.set_output_transform(name, tvals[row.get_selected()])
+        toast(self, f"{name} rotated" if okd else f"Could not rotate: {out}")
+
+
+# ---------------------------------------------------------------- Input
+class InputPage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="Input", icon_name="input-touchpad-symbolic")
+
+        tp = Adw.PreferencesGroup(title="Touchpad")
+        self.add(tp)
+        for title, sub, prop, on, off in [
+            ("Tap to click", "", "tap", "enabled", "disabled"),
+            ("Natural scrolling", "Content follows your fingers",
+             "natural_scroll", "enabled", "disabled"),
+            ("Disable while typing", "Palm rejection",
+             "dwt", "enabled", "disabled"),
+        ]:
+            r = Adw.SwitchRow(title=title, subtitle=sub, active=True)
+            r.connect("notify::active", self._toggle, "type:touchpad", prop, on, off)
+            tp.add(r)
+
+        tpt = Adw.PreferencesGroup(
+            title="TrackPoint",
+            description="Hold the middle button and nudge the stick to scroll. "
+                        "A plain middle click still pastes.")
+        self.add(tpt)
+        r = Adw.SwitchRow(title="Middle-button scrolling", active=True)
+        r.connect("notify::active", self._toggle, "type:pointer",
+                  "scroll_method", "on_button_down", "none")
+        tpt.add(r)
+
+        kb = Adw.PreferencesGroup(title="Keyboard")
+        self.add(kb)
+        rate = Adw.SpinRow.new_with_range(10, 100, 5)
+        rate.set_title("Repeat rate")
+        rate.set_subtitle("Characters per second when a key is held")
+        rate.set_value(40)
+        rate.connect("notify::value", self._spin, "type:keyboard", "repeat_rate")
+        kb.add(rate)
+        delay = Adw.SpinRow.new_with_range(100, 1000, 50)
+        delay.set_title("Repeat delay")
+        delay.set_subtitle("Milliseconds before repeating starts")
+        delay.set_value(300)
+        delay.connect("notify::value", self._spin, "type:keyboard", "repeat_delay")
+        kb.add(delay)
+
+        touch = Adw.PreferencesGroup(
+            title="Touchscreen",
+            description="Touch is mapped to the internal panel so coordinates "
+                        "stay correct when an external monitor is attached. "
+                        "Note: no on-screen keyboard can type into the lock "
+                        "screen — swaylock takes an exclusive keyboard grab.")
+        self.add(touch)
+        n = len([i for i in b.inputs() if i.get("type") == "touch"])
+        touch.add(Adw.ActionRow(
+            title="Touch devices detected",
+            subtitle=str(n) if n else "none (is this a touch model?)"))
+
+    def _toggle(self, row, _p, ident, prop, on, off):
+        okd, out = b.set_input_option(ident, prop, on if row.get_active() else off)
+        if not okd:
+            toast(self, f"Could not apply: {out}")
+
+    def _spin(self, row, _p, ident, prop):
+        okd, out = b.set_input_option(ident, prop, str(int(row.get_value())))
+        if not okd:
+            toast(self, f"Could not apply: {out}")
+
+
+# ---------------------------------------------------------------- Keyboard
+class KeyboardPage(Adw.PreferencesPage):
+    """Bindings plus the live key tester.
+
+    The tester exists because of a real failure: F-keys that did nothing, with
+    no way to tell an unbound key from a broken one. It shows the keysym GTK
+    actually received, needs no extra package (wev is COPR-only on Fedora),
+    and answers "is this key even reaching the compositor?" in one press.
+    """
+
+    def __init__(self):
+        super().__init__(title="Keyboard", icon_name="input-keyboard-symbolic")
+
+        t = Adw.PreferencesGroup(
+            title="Key tester",
+            description="Press any key — including the F-row and Fn combos — "
+                        "to see the keysym your system reports. Nothing shown "
+                        "means the key never reached the compositor: check "
+                        "FnLock with Fn+Esc.")
+        self.add(t)
+        self.readout = Adw.ActionRow(title="Waiting for a key…",
+                                     subtitle="Click here first, then press a key")
+        self.readout.set_activatable(True)
+        t.add(self.readout)
+
+        keys = Gtk.EventControllerKey()
+        keys.connect("key-pressed", self._on_key)
+        self.add_controller(keys)
+        self.set_focusable(True)
+
+        by_cat: dict[str, list[dict]] = {}
+        for row in b.keybinds():
+            by_cat.setdefault(row["category"], []).append(row)
+        for cat, rows in by_cat.items():
+            g = Adw.PreferencesGroup(title=cat)
+            for r in rows:
+                g.add(Adw.ActionRow(title=r["keys"], subtitle=r["description"]))
+            self.add(g)
+
+    def _on_key(self, _c, keyval, keycode, state):
+        name = Gdk.keyval_name(keyval) or f"0x{keyval:x}"
+        mods = [m for m, f in (("Super", Gdk.ModifierType.SUPER_MASK),
+                               ("Ctrl", Gdk.ModifierType.CONTROL_MASK),
+                               ("Alt", Gdk.ModifierType.ALT_MASK),
+                               ("Shift", Gdk.ModifierType.SHIFT_MASK))
+                if state & f]
+        combo = "+".join(mods + [name])
+        self.readout.set_title(combo)
+        self.readout.set_subtitle(f"keysym {name}   ·   keycode {keycode}")
+        return True
+
+
+# ---------------------------------------------------------------- Power
+class PowerPage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="Power", icon_name="battery-symbolic")
+
+        profiles, current = b.power_profiles()
+        g = Adw.PreferencesGroup(title="Power profile")
+        self.add(g)
+        if profiles:
+            row = Adw.ComboRow(title="Profile")
+            row.set_model(Gtk.StringList.new(profiles))
+            if current in profiles:
+                row.set_selected(profiles.index(current))
+            row.connect("notify::selected", self._on_profile, profiles)
+            g.add(row)
+        else:
+            g.add(Adw.ActionRow(
+                title="power-profiles-daemon not available",
+                subtitle="Install it, and do not run TLP at the same time — "
+                         "they conflict"))
+
+        bat = b.battery_info()
+        bg = Adw.PreferencesGroup(title="Battery")
+        self.add(bg)
+        if bat:
+            bg.add(Adw.ActionRow(title="Charge",
+                                 subtitle=f"{bat.get('capacity','?')}% "
+                                          f"({bat.get('status','?')})"))
+            if "health" in bat:
+                bg.add(Adw.ActionRow(
+                    title="Health", subtitle=f"{bat['health']} of design capacity"))
+        else:
+            bg.add(Adw.ActionRow(title="No battery detected"))
+
+        lid = Adw.PreferencesGroup(
+            title="Lid and idle",
+            description="Closing the lid suspends — unless a VM is running, in "
+                        "which case it locks and blanks instead, so a guest is "
+                        "never frozen mid-write. Idle locks at 10 minutes and "
+                        "blanks at 15; a visible VM console suppresses both.")
+        self.add(lid)
+
+    def _on_profile(self, row, _p, profiles):
+        okd, out = b.set_power_profile(profiles[row.get_selected()])
+        if not okd:
+            toast(self, f"Could not switch profile: {out}")
+
+
+# ---------------------------------------------------------------- System
+class SystemPage(Adw.PreferencesPage):
+    def __init__(self):
+        super().__init__(title="System", icon_name="computer-symbolic")
+        g = Adw.PreferencesGroup(title="System information")
+        self.add(g)
+        for k, v in b.system_info().items():
+            row = Adw.ActionRow(title=k, subtitle=v)
+            row.set_subtitle_selectable(True)
+            g.add(row)
+
+
+# ---------------------------------------------------------------- window
+class Window(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Settings",
+                         default_width=940, default_height=720)
+        self.toaster = Adw.ToastOverlay()
+        view = Adw.ViewStack()
+        for page in (AppearancePage(), WallpaperPage(), DisplayPage(),
+                     InputPage(), KeyboardPage(), PowerPage(), SystemPage()):
+            view.add_titled_with_icon(page, page.get_title(),
+                                      page.get_title(), page.get_icon_name())
+
+        switcher = Adw.ViewSwitcher(stack=view,
+                                    policy=Adw.ViewSwitcherPolicy.WIDE)
+        header = Adw.HeaderBar(title_widget=switcher)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.append(header)
+        box.append(view)
+        view.set_vexpand(True)
+        self.toaster.set_child(box)
+        self.set_content(self.toaster)
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID)
+
+    def do_activate(self):
+        (self.props.active_window or Window(self)).present()
+
+
+def main() -> int:
+    return App().run(None)

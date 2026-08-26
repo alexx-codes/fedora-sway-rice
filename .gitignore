@@ -1,4 +1,2 @@
-# nothing generated at runtime lives in the repo; theme files and
-# keybinds.conf/KEYBINDS.md are generated but committed on purpose
 __pycache__/
 *.pyc
