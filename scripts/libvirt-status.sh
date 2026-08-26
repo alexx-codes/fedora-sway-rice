@@ -14,6 +14,9 @@ count=$(printf '%s' "$domains" | grep -c . || true)
 if [ "$count" -eq 0 ]; then
     printf '{"text":"0","tooltip":"No running VMs","class":"idle"}\n'
 else
-    tooltip=$(printf 'Running VMs:\\n%s' "$(printf '%s' "$domains" | sed ':a;N;$!ba;s/\n/\\n/g')")
-    printf '{"text":"%s","tooltip":"%s","class":"running"}\n' "$count" "$tooltip"
+    # Build the JSON with jq rather than printf: a domain name containing a
+    # quote or backslash would otherwise emit malformed JSON and blank the
+    # whole waybar module.
+    printf '%s' "$domains" | jq -Rs --arg count "$count" \
+        '{text: $count, tooltip: ("Running VMs:\n" + (. | rtrimstr("\n"))), class: "running"}' -c
 fi

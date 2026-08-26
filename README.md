@@ -15,8 +15,8 @@ git clone <this repo> && cd fedora-sway-rice
 # optional but recommended: drop your wallpaper in first
 cp ~/Downloads/lofi-girl-night-cat-3840x2160-15268.jpg wallpapers/night.jpg
 ./install.sh        # packages + configs + services (asks before the one COPR)
-./verify.sh         # read-only health check: KVM, libvirt group, fonts, VS Code
-# log out, pick "Sway" in the display manager, log in
+./verify.sh         # health check   (--preflight / --fix also available)
+# log out, pick "Sway (rice)" in the display manager, log in
 ```
 
 Existing configs are moved to `<name>.bak-<epoch>`, never deleted. Edit

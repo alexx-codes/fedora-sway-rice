@@ -251,6 +251,16 @@ deploy_configs() {
         deploy_tree "$repo/config/$app" "$cfg/$app"
         touch "$cfg/$app/.rice-managed"
     done
+
+    # qt6ct's icon_theme is owned by theme-toggle.sh at runtime; the repo copy
+    # carries the dark value, so redeploying while in light mode reverted it
+    # until the next toggle. Re-apply the ACTIVE theme's value after deploy.
+    if [ -f "$cfg/rice/active/colors.env" ] && [ -f "$cfg/qt6ct/qt6ct.conf" ]; then
+        local active_icons
+        active_icons=$(sed -n 's/^ICON_THEME=//p' "$cfg/rice/active/colors.env")
+        [ -n "$active_icons" ] && sed -i "s/^icon_theme=.*/icon_theme=$active_icons/" \
+            "$cfg/qt6ct/qt6ct.conf"
+    fi
     deploy_tree "$repo/config/quickshell" "$cfg/quickshell"
     deploy_tree "$repo/config/environment.d" "$cfg/environment.d"
     sed "s|__HOME__|$HOME|g" "$repo/config/starship.toml" > "$cfg/starship.toml"

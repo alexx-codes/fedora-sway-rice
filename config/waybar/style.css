@@ -74,6 +74,8 @@ window#waybar {
 }
 
 #custom-vms      { color: @accent2; }
+#custom-vms.idle { color: @muted; }
+#custom-vms.error{ color: @orange; }
 #cpu             { color: @accent; }
 #memory          { color: @teal; }
 #disk            { color: @accent2; }

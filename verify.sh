@@ -363,6 +363,43 @@ if command -v authselect >/dev/null 2>&1; then
     fi
 fi
 
+sect "Hardware enablement (X1 Carbon Gen 11)"
+if command -v vainfo >/dev/null 2>&1; then
+    _va=$(vainfo 2>&1 | grep -i 'Driver version' | head -1 | sed 's/.*: *//')
+    if [ -n "$_va" ]; then
+        pass "VA-API: $_va"
+        case "$_va" in *iHD*) : ;; *) warn "  expected the iHD driver on Iris Xe" ;; esac
+    else
+        warn "vainfo present but VA-API not working — hardware video decode is off"
+    fi
+else
+    warn "vainfo not installed — cannot confirm Iris Xe video acceleration"
+fi
+for svc in thermald fwupd; do
+    if systemctl is-active "$svc" >/dev/null 2>&1; then
+        pass "$svc active"
+    elif rpm -q "$svc" >/dev/null 2>&1; then
+        warn "$svc installed but not running (systemctl enable --now $svc)"
+    else
+        warn "$svc not installed"
+    fi
+done
+
+sect "Secret Service (VS Code / git credentials)"
+if command -v secret-tool >/dev/null 2>&1; then
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && secret-tool search --all rice probe >/dev/null 2>&1; then
+        pass "Secret Service reachable — credential storage will persist"
+    elif [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        fail "secret-tool installed but no Secret Service is answering."
+        fail "  VS Code and git credentials will silently fail to persist."
+        fail "  Check: systemctl --user status gnome-keyring-daemon"
+    else
+        warn "not in a session — cannot probe the Secret Service"
+    fi
+else
+    fail "secret-tool missing — no Secret Service (VS Code/git credentials won't persist)"
+fi
+
 sect "Portals (screen sharing / file pickers)"
 for p in xdg-desktop-portal-wlr xdg-desktop-portal-gtk; do
     rpm -q "$p" >/dev/null 2>&1 && pass "$p" || fail "$p not installed"
