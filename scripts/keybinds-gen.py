@@ -20,6 +20,7 @@ CATEGORY_ORDER = [
     "Workspaces",
     "Launching apps",
     "Media & brightness",
+    "ThinkPad F-row",
     "Screenshots",
     "Theme",
     "Session & power",
@@ -97,6 +98,22 @@ def gen_md(rows):
             out.append(f"| `{keys}` | {r['desc']} |")
         out.append("")
     notes = [
+        "## If a key does nothing",
+        "",
+        "1. **Check FnLock first.** `Fn+Esc` toggles it. With FnLock ON the top",
+        "   row sends plain `F1`–`F12` instead of the media keysyms, so none of",
+        "   the ThinkPad F-row bindings above will fire. This is firmware",
+        "   behavior — no amount of sway config changes it.",
+        "2. **Open Settings → Keyboard** (`$mod+Shift+S`) and use the live key",
+        "   tester: press the key and it shows you the keysym actually being",
+        "   received. If nothing appears, the key never reaches Wayland.",
+        "3. **Run `./verify.sh`.** It checks that every binding's backing binary",
+        "   is installed, and that you are in the `video` group (brightness keys",
+        "   fail silently without it) — `./verify.sh --fix` repairs both.",
+        "",
+        "Key scripts now report failures as notifications instead of failing",
+        "silently, so a missing package or permission problem says so.",
+        "",
         "## Notes on non-obvious choices",
         "",
         "- `$mod+Shift+c/w/v` (app jumps) displaced the i3 default of `$mod+Shift+c`",
@@ -146,9 +163,32 @@ def check_drift():
         )
 
 
+def check_duplicates(rows):
+    """Fail if the same key combo is bound twice.
+
+    Sway silently keeps only the last binding for a combo, so a duplicate is a
+    binding that appears to work in the docs and does nothing in practice.
+    """
+    seen = {}
+    dupes = []
+    for r in rows:
+        if "doc" in r["flags"]:
+            continue
+        # normalize modifier order so $mod+Shift+a and $mod+shift+A collide
+        parts = r["keys"].split("+")
+        key = "+".join(sorted(p.lower() for p in parts[:-1]) + [parts[-1].lower()])
+        if key in seen and seen[key] != r["cmd"]:
+            dupes.append(f"{r['keys']}  ->  {seen[key]}   AND   {r['cmd']}")
+        seen[key] = r["cmd"]
+    if dupes:
+        sys.exit("duplicate key bindings (sway would silently keep only the "
+                 "last one):\n  " + "\n  ".join(dupes))
+
+
 def main():
     rows = parse()
     check_drift()
+    check_duplicates(rows)
     gen_conf(rows)
     gen_md(rows)
     print(f"wrote {CONF.relative_to(REPO)} and {MD.relative_to(REPO)} from {len(rows)} rows (drift check ok)")

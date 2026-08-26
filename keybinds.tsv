@@ -87,6 +87,24 @@ Media & brightness	XF86MonBrightnessDown	locked	exec ~/.config/rice/scripts/brig
 Media & brightness	XF86AudioPlay	locked	exec playerctl play-pause	Play / pause media
 Media & brightness	XF86AudioNext	locked	exec playerctl next	Next track
 Media & brightness	XF86AudioPrev	locked	exec playerctl previous	Previous track
+Media & brightness	Fn+Space	doc	-	Cycle the keyboard backlight (off / low / high)
+Media & brightness	XF86KbdLightOnOff	locked,hide	exec ~/.config/rice/scripts/brightness.sh kbd	-
+Media & brightness	XF86KbdBrightnessUp	locked,hide	exec ~/.config/rice/scripts/brightness.sh kbd	-
+ThinkPad F-row	F7 (XF86Display)	doc	-	Display menu: internal only / external only / extend
+ThinkPad F-row	XF86Display	hide	exec ~/.config/rice/scripts/display-menu.sh	-
+ThinkPad F-row	F8 (XF86WLAN)	doc	-	Toggle Wi-Fi on / off
+ThinkPad F-row	XF86WLAN	locked,hide	exec ~/.config/rice/scripts/toggle-wifi.sh	-
+ThinkPad F-row	XF86RFKill	locked,hide	exec ~/.config/rice/scripts/toggle-wifi.sh	-
+ThinkPad F-row	F9 (XF86Tools)	doc	-	Toggle the notification / control center panel
+ThinkPad F-row	XF86Tools	hide	exec swaync-client -t -sw	-
+ThinkPad F-row	F10 (XF86Bluetooth)	doc	-	Toggle Bluetooth on / off
+ThinkPad F-row	XF86Bluetooth	locked,hide	exec ~/.config/rice/scripts/toggle-bluetooth.sh	-
+ThinkPad F-row	F11 / F12	doc	-	Open the Settings app (firmware differs on which keysym it sends)
+ThinkPad F-row	XF86Favorites	hide	exec rice-settings	-
+ThinkPad F-row	XF86AudioMedia	hide	exec rice-settings	-
+ThinkPad F-row	XF86ScreenSaver	locked,hide	exec swaylock -f	-
+ThinkPad F-row	XF86PowerOff	-	exec ~/.config/rice/scripts/powermenu.sh	Power button: open the power menu instead of instantly suspending
+ThinkPad F-row	Fn+Esc	doc	-	FnLock. Not a sway binding — firmware. With it ON the top row sends plain F1-F12 and none of the above fire.
 Theme	$mod+Shift+t	-	exec ~/.config/rice/scripts/theme-toggle.sh	Toggle dark (Tokyo Night) / light (pastel) everywhere at once
 Session & power	$mod+Shift+x	-	exec swaylock -f	Lock the screen
 Session & power	$mod+Shift+e	-	exec ~/.config/rice/scripts/powermenu.sh	Power menu (lock / logout / suspend / reboot / shutdown / theme)

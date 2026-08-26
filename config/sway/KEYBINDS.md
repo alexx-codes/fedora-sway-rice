@@ -63,6 +63,19 @@
 | `XF86AudioPlay` | Play / pause media |
 | `XF86AudioNext` | Next track |
 | `XF86AudioPrev` | Previous track |
+| `Fn+Space` | Cycle the keyboard backlight (off / low / high) |
+
+## ThinkPad F-row
+
+| Keys | Action |
+|------|--------|
+| `F7 (XF86Display)` | Display menu: internal only / external only / extend |
+| `F8 (XF86WLAN)` | Toggle Wi-Fi on / off |
+| `F9 (XF86Tools)` | Toggle the notification / control center panel |
+| `F10 (XF86Bluetooth)` | Toggle Bluetooth on / off |
+| `F11 / F12` | Open the Settings app (firmware differs on which keysym it sends) |
+| `XF86PowerOff` | Power button: open the power menu instead of instantly suspending |
+| `Fn+Esc` | FnLock. Not a sway binding — firmware. With it ON the top row sends plain F1-F12 and none of the above fire. |
 
 ## Screenshots
 
@@ -88,6 +101,22 @@
 | `$mod+Shift+slash` | This cheatsheet, as an on-screen popup |
 | `Lid close` | Suspend — unless a VM is running: then lock + screen off, no suspend |
 | `Resize mode: h/j/k/l or arrows` | Shrink/grow the window; Enter or Escape leaves resize mode |
+
+## If a key does nothing
+
+1. **Check FnLock first.** `Fn+Esc` toggles it. With FnLock ON the top
+   row sends plain `F1`–`F12` instead of the media keysyms, so none of
+   the ThinkPad F-row bindings above will fire. This is firmware
+   behavior — no amount of sway config changes it.
+2. **Open Settings → Keyboard** (`$mod+Shift+S`) and use the live key
+   tester: press the key and it shows you the keysym actually being
+   received. If nothing appears, the key never reaches Wayland.
+3. **Run `./verify.sh`.** It checks that every binding's backing binary
+   is installed, and that you are in the `video` group (brightness keys
+   fail silently without it) — `./verify.sh --fix` repairs both.
+
+Key scripts now report failures as notifications instead of failing
+silently, so a missing package or permission problem says so.
 
 ## Notes on non-obvious choices
 
