@@ -38,7 +38,7 @@ export XDG_CURRENT_DESKTOP=sway
 export XDG_SESSION_TYPE=wayland
 export XDG_SESSION_DESKTOP=sway
 
-# Cargo-installed tools (matugen, swww) and user scripts
+# Cargo-installed tools (swww) and user scripts
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 
 exec sway "$@"

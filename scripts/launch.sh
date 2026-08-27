@@ -10,7 +10,7 @@
 # Every raw exec now goes through here instead.
 #
 # It also resolves binaries that live in ~/.local/bin (rice-settings) and
-# ~/.cargo/bin (matugen, swww), which are not on sway's PATH unless the
+# ~/.cargo/bin (swww), which are not on sway's PATH unless the
 # session was started via the "Sway (rice)" entry.
 set -u
 . "$(dirname "$0")/lib-notify.sh"

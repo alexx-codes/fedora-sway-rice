@@ -1,0 +1,22 @@
+{
+  "name": "Ashfall",
+  "colors": {
+    "bg": "#0d0e11",
+    "bg-alt": "#101217",
+    "bg-hl": "#1a1d24",
+    "bg-sel": "#2c313b",
+    "fg": "#c8ccd2",
+    "fg-dim": "#a2a9b3",
+    "muted": "#737b87",
+    "border": "#272c34",
+    "accent": "#8fa0b3",
+    "accent2": "#a8899a",
+    "pink": "#bd8298",
+    "red": "#c96a60",
+    "orange": "#c68a4e",
+    "yellow": "#b9a253",
+    "green": "#87a173",
+    "teal": "#6fa39d",
+    "cyan": "#7f9db3"
+  }
+}

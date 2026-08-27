@@ -103,7 +103,7 @@ preflight_check() {
         fi
     fi
 
-    # 7. Disk. The cargo builds (matugen, swww) need real space, and a full
+    # 7. Disk. The cargo build (swww) needs real space, and a full
     #    root filesystem fails in a way that looks like a compiler error.
     local avail_mb
     avail_mb=$(df -Pm "$HOME" 2>/dev/null | awk 'NR==2{print $4}')
@@ -160,16 +160,13 @@ repair_auto() {
     done
 
     # Generated theme files — regenerate rather than hand-repair
-    local active mode
-    active=$(readlink "$HOME/.config/rice/active" 2>/dev/null || true)
-    mode=$(basename "${active:-dark}")
     local f incomplete=0
-    for f in colors.env foot.ini waybar.css sway-colors.conf swaync-theme.css \
+    for f in colors.env foot.ini colors.css sway-colors.conf rofi.rasi \
              swaylock.conf quickshell.json qt6ct-colors.conf; do
-        [ -f "$HOME/.config/rice/themes/$mode/$f" ] || incomplete=1
+        [ -f "$HOME/.config/rice/theme/$f" ] || incomplete=1
     done
     if [ "$incomplete" = 1 ]; then
-        warn "theme '$mode' is missing generated files — regenerating"
+        warn "theme files are missing — regenerating"
         pf_would "$RICE_REPO/scripts/theme-gen.py" && did=1
         pf_would "$RICE_REPO/install.sh" --configs-only && did=1
     else
@@ -178,8 +175,8 @@ repair_auto() {
 
     # Wallpaper links (the B3 first-boot bug, in case it recurs)
     if [ ! -e "$HOME/.config/rice/wallpapers/current" ]; then
-        warn "wallpaper links missing — reapplying the active theme"
-        pf_would "$HOME/.config/rice/scripts/theme-toggle.sh" --apply && did=1
+        warn "wallpaper link missing — redeploying configs"
+        pf_would "$RICE_REPO/install.sh" --configs-only && did=1
     fi
 
     # Placeholder leak means a deploy was interrupted

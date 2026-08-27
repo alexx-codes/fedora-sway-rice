@@ -85,12 +85,6 @@
 | `$mod+Print` | Full screen screenshot: copy and save |
 | `$mod+Shift+Print` | Screenshot the focused window: copy and save |
 
-## Theme
-
-| Keys | Action |
-|------|--------|
-| `$mod+Shift+t` | Toggle dark (Tokyo Night) / light (pastel) everywhere at once |
-
 ## Session & power
 
 | Keys | Action |

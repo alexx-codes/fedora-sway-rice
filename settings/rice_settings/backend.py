@@ -7,8 +7,8 @@ settings app is exactly how you end up with a settings app that corrupts
 your config.
 
 Design rules:
-  * Never reimplement what a script already does. Theme switching calls
-    theme-toggle.sh; the contrast gate is theme-gen.py. One implementation.
+  * Never reimplement what a script already does. The contrast gate lives in
+    theme-gen.py; nothing here duplicates it.
   * All persistence goes to ~/.config/rice/settings.conf, which sway includes
     last and install.sh never overwrites.
   * sway rejects trailing "#" comments on a command line, so written lines
@@ -139,29 +139,24 @@ def apply_live(line: str) -> tuple[bool, str]:
 
 
 # ---------------------------------------------------------------- theme
-def current_theme() -> str:
-    try:
-        return (RICE / "active").resolve().name
-    except OSError:
-        return "dark"
-
-
-def theme_palette(mode: str | None = None) -> dict[str, str]:
-    """Colors of a theme, read from its generated quickshell.json."""
-    mode = mode or current_theme()
-    f = RICE / "themes" / mode / "quickshell.json"
+def theme_palette() -> dict[str, str]:
+    """Colors of the one palette, from its generated quickshell.json."""
+    f = RICE / "theme" / "quickshell.json"
     try:
         return json.loads(f.read_text()).get("colors", {})
     except (OSError, json.JSONDecodeError):
         return {}
 
 
-def set_theme(mode: str) -> tuple[bool, str]:
-    """Switch theme by calling theme-toggle.sh — never reimplement it."""
-    if mode not in ("dark", "light"):
-        return False, f"unknown theme: {mode}"
-    rc, out = run([str(SCRIPTS / "theme-toggle.sh"), mode], timeout=30)
-    return rc == 0, out
+def theme_name() -> str:
+    f = RICE / "theme" / "colors.env"
+    try:
+        for line in f.read_text().splitlines():
+            if line.startswith("NAME="):
+                return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return "theme"
 
 
 # ---------------------------------------------------------------- wallpaper
@@ -187,7 +182,7 @@ def list_wallpapers() -> list[Path]:
 
 
 def set_wallpaper(path: Path) -> tuple[bool, str]:
-    """Apply a wallpaper. Uses swww when its daemon is up, else swaybg."""
+    """Apply a wallpaper. The palette is fixed and does not follow the image."""
     path = Path(path)
     if not path.is_file():
         return False, f"no such image: {path}"
@@ -202,63 +197,10 @@ def set_wallpaper(path: Path) -> tuple[bool, str]:
             return False, f"could not update {link}: {e}"
 
     if has("swww") and run(["swww", "query"])[0] == 0:
-        rc, out = run(
-            ["swww", "img", str(path), "--resize", "crop",
-             "--transition-type", "grow", "--transition-duration", "1.2"],
-            timeout=20)
+        rc, out = run(["swww", "img", str(path), "--resize", "crop"], timeout=20)
         return rc == 0, out
     rc, out = run(["systemctl", "--user", "restart", "wallpaper-daemon.service"])
     return rc == 0, out
-
-
-def regen_palette_from(path: Path) -> tuple[bool, str]:
-    """Re-derive the dark palette from an image, GATED ON CONTRAST.
-
-    This is the risk called out when the wallpaper switcher was proposed: a
-    palette derived from an arbitrary image can come out unreadable. So the
-    old palette is kept, matugen writes a new one, theme-gen.py's existing
-    contrast gate judges it, and on failure the old palette is restored and
-    the failing colors are reported. The wallpaper still changes either way.
-    """
-    if not has("matugen"):
-        return False, "matugen is not installed — wallpaper changed, palette kept"
-
-    colors = RICE / "themes" / "dark" / "colors.env"
-    backup = colors.with_suffix(".env.bak")
-    try:
-        if colors.is_file():
-            shutil.copy2(colors, backup)
-    except OSError as e:
-        return False, f"could not back up the current palette: {e}"
-
-    cfg = RICE / "matugen" / "config.toml"
-    rc, out = run(["matugen", "-c", str(cfg), "-m", "dark", "image", str(path)],
-                  timeout=60)
-    if rc != 0:
-        _restore(backup, colors)
-        return False, f"matugen failed, palette unchanged: {out}"
-
-    rc, out = run([str(SCRIPTS / "theme-gen.py")], timeout=60)
-    if rc != 0:
-        _restore(backup, colors)
-        run([str(SCRIPTS / "theme-gen.py")])
-        return False, (
-            "palette from this image failed the contrast check and was "
-            "reverted — your text stays readable.\n" + out
-        )
-
-    backup.unlink(missing_ok=True)
-    run([str(SCRIPTS / "theme-toggle.sh"), "--apply"], timeout=30)
-    return True, "palette regenerated from this wallpaper and passed contrast"
-
-
-def _restore(backup: Path, target: Path) -> None:
-    try:
-        if backup.is_file():
-            shutil.copy2(backup, target)
-            backup.unlink(missing_ok=True)
-    except OSError:
-        pass
 
 
 # ---------------------------------------------------------------- display

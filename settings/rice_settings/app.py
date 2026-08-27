@@ -27,73 +27,6 @@ def toast(page: Adw.PreferencesPage, text: str) -> None:
         win.toaster.add_toast(Adw.Toast(title=text, timeout=4))
 
 
-# ---------------------------------------------------------------- Appearance
-class AppearancePage(Adw.PreferencesPage):
-    def __init__(self):
-        super().__init__(title="Appearance", icon_name="applications-graphics-symbolic")
-
-        g = Adw.PreferencesGroup(
-            title="Theme",
-            description="Switches Foot, Waybar, Quickshell, GTK, Qt, swaync, "
-                        "rofi, swaylock and the wallpaper in one step.")
-        self.add(g)
-
-        self.mode = Adw.ComboRow(title="Palette",
-                                 subtitle="Tokyo Night (dark) or Pastel Cat (light)")
-        self.mode.set_model(Gtk.StringList.new(["dark", "light"]))
-        self.mode.set_selected(0 if b.current_theme() == "dark" else 1)
-        self.mode.connect("notify::selected", self._on_mode)
-        g.add(self.mode)
-
-        self.swatches = Adw.PreferencesGroup(title="Current palette")
-        self.add(self.swatches)
-        self._swatch_row = None
-        self._draw_swatches()
-
-        note = Adw.PreferencesGroup(
-            title="Contrast",
-            description="Every palette is checked against WCAG contrast before "
-                        "it ships: terminal text must clear 7:1 and accent "
-                        "colors 3:1. A palette that fails is rejected rather "
-                        "than shipped, so text stays readable in both modes.")
-        self.add(note)
-
-    def _draw_swatches(self):
-        if self._swatch_row:
-            self.swatches.remove(self._swatch_row)
-        row = Adw.ActionRow(title="Colors")
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6,
-                      margin_top=8, margin_bottom=8)
-        for name in ("bg", "fg", "accent", "accent2", "pink", "red",
-                     "green", "yellow", "cyan"):
-            hexv = b.theme_palette().get(name)
-            if not hexv:
-                continue
-            sw = Gtk.DrawingArea(content_width=26, content_height=26,
-                                 tooltip_text=f"{name}  {hexv}")
-            rgba = Gdk.RGBA()
-            rgba.parse(hexv)
-            sw.set_draw_func(self._paint, rgba)
-            box.append(sw)
-        row.add_suffix(box)
-        self.swatches.add(row)
-        self._swatch_row = row
-
-    @staticmethod
-    def _paint(area, cr, w, h, rgba):
-        cr.set_source_rgba(rgba.red, rgba.green, rgba.blue, rgba.alpha)
-        cr.rectangle(0, 0, w, h)
-        cr.fill()
-
-    def _on_mode(self, row, _p):
-        mode = ["dark", "light"][row.get_selected()]
-        if mode == b.current_theme():
-            return
-        okd, out = b.set_theme(mode)
-        toast(self, f"Switched to {mode}" if okd else f"Theme switch reported: {out}")
-        self._draw_swatches()
-
-
 # ---------------------------------------------------------------- Wallpaper
 class WallpaperPage(Adw.PreferencesPage):
     def __init__(self):
@@ -102,15 +35,6 @@ class WallpaperPage(Adw.PreferencesPage):
         d = b.wallpaper_dir()
         g = Adw.PreferencesGroup(title="Wallpapers", description=f"From {d}")
         self.add(g)
-
-        self.regen = Adw.SwitchRow(
-            title="Re-derive the palette from the wallpaper",
-            subtitle="Runs matugen, then the contrast gate. If the result "
-                     "would hurt readability it is reverted automatically and "
-                     "the wallpaper still changes. Dark mode only — a light "
-                     "palette from an arbitrary image comes out muddy.")
-        self.regen.set_active(False)
-        g.add(self.regen)
 
         papers = b.list_wallpapers()
         if not papers:
@@ -149,14 +73,8 @@ class WallpaperPage(Adw.PreferencesPage):
 
     def _apply(self, _btn, path):
         okd, out = b.set_wallpaper(path)
-        if not okd:
-            toast(self, f"Could not set wallpaper: {out}")
-            return
-        if not self.regen.get_active():
-            toast(self, f"Wallpaper set to {path.name}")
-            return
-        okd, msg = b.regen_palette_from(path)
-        toast(self, msg if okd else f"Wallpaper set. {msg}")
+        toast(self, f"Wallpaper set to {path.name}" if okd
+              else f"Could not set wallpaper: {out}")
 
 
 # ---------------------------------------------------------------- Display
@@ -399,8 +317,8 @@ class Window(Adw.ApplicationWindow):
                          default_width=940, default_height=720)
         self.toaster = Adw.ToastOverlay()
         view = Adw.ViewStack()
-        for page in (AppearancePage(), WallpaperPage(), DisplayPage(),
-                     InputPage(), KeyboardPage(), PowerPage(), SystemPage()):
+        for page in (WallpaperPage(), DisplayPage(), InputPage(),
+                     KeyboardPage(), PowerPage(), SystemPage()):
             view.add_titled_with_icon(page, page.get_title(),
                                       page.get_title(), page.get_icon_name())
 

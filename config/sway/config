@@ -4,7 +4,7 @@
 #   keybinds.conf   - GENERATED from keybinds.tsv (repo root); do not hand-edit
 #   workspaces.conf - workspace names, switching binds, app assignments
 #   windowrules.conf- floating/placement rules (virt-manager, dialogs, ...)
-#   ~/.config/rice/active/sway-colors.conf - GENERATED theme colors (dark/light)
+#   ~/.config/rice/theme/sway-colors.conf - GENERATED colors (one palette)
 #
 # All services (waybar, swaync, quickshell, wallpaper, idle, clipboard, polkit)
 # run as systemd user units bound to sway-session.target — nothing is
@@ -29,8 +29,8 @@ exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CU
 exec systemctl --user import-environment WAYLAND_DISPLAY DISPLAY && systemctl --user start sway-session.target
 
 # ---------------------------------------------------------------- appearance
-# Theme colors are swapped atomically by ~/.config/rice/scripts/theme-toggle.sh
-include ~/.config/rice/active/sway-colors.conf
+# One palette. Edit theme/colors.env, run scripts/theme-gen.py, redeploy.
+include ~/.config/rice/theme/sway-colors.conf
 
 default_border pixel 2
 default_floating_border pixel 2

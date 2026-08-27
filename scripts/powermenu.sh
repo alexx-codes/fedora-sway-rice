@@ -11,16 +11,14 @@ choice=$(printf '%s\n' \
     "  Lock" \
     "󰍃  Logout" \
     "󰤄  Suspend" \
-    "  Theme toggle" \
     "󰜉  Reboot" \
     "󰐥  Shutdown" \
-    | rofi -dmenu -i -p "power" -l 6) || exit 0
+    | rofi -dmenu -i -p "power" -l 5) || exit 0
 
 case "$choice" in
     *Lock)     swaylock -f ;;
     *Logout)   swaymsg exit ;;
     *Suspend)  systemctl suspend ;;
-    *Theme*)   "$HOME/.config/rice/scripts/theme-toggle.sh" ;;
     *Reboot)   systemctl reboot ;;
     *Shutdown) systemctl poweroff ;;
 esac

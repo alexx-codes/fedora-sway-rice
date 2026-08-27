@@ -1,12 +1,11 @@
 # fedora-sway-rice
 
-Anime-cat themed Sway desktop for Fedora on a ThinkPad X1 Carbon, built for
-coding and QEMU/KVM work. Two first-class palettes — **Tokyo Night** (dark,
-default) and **Pastel Cat** (light) — with a single keybind that switches
-every component at once. Stability first: everything supervised runs as a
-systemd user service, daily-critical paths use official-repo packages, and
-the fancy layer (Quickshell) degrades to rofi fallbacks instead of
-breaking.
+Dark, grim Sway desktop for Fedora on a ThinkPad X1 Carbon Gen 11, built for
+coding and QEMU/KVM work. **One palette — Ashfall**: near-black surfaces,
+desaturated cold accents, ash-on-charcoal text. No modes, no toggle. Stability
+first: everything supervised runs as a systemd user service, daily-critical
+paths use official-repo packages, and the fancy layer (Quickshell) degrades to
+rofi fallbacks instead of breaking.
 
 ## Install
 
@@ -30,51 +29,42 @@ that keeps git the single source of truth and every change diffable.
 | Compositor | sway + sway-systemd | systemd session target supervises everything (the old runit-style rice died from ad-hoc `exec_always` supervision) |
 | Terminal | foot | Wayland-native, GPU-accelerated, tiny |
 | Bar | Waybar | workspaces, clock, tray + prominent CPU/RAM/temp/net for VM load, running-VM count |
-| Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — all IPC-driven with rofi fallbacks |
+| Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — IPC-driven, rofi fallbacks |
 | Launcher | rofi-wayland | official repo; also the dmenu backend for the clipboard, power menu and cheatsheet fallbacks |
 | Notifications | SwayNotificationCenter | daemon + control center in one official package (chosen over mako for the panel) |
 | Lock | swaylock | plain swaylock over swaylock-effects: the fork only lives in stale personal COPRs |
 | Idle | swayidle | lock 10 min, screen off 15 min, lock-before-sleep |
-| Wallpaper | swww (cargo) → swaybg fallback | animated dark/light transition; falls back cleanly |
+| Wallpaper | swaybg (swww optional) | static; no animated transition needed without a theme toggle |
 | Screenshots | grim + slurp + wrapper | area/full/window, clipboard + `~/Pictures/Screenshots` |
 | Clipboard | cliphist | text+image history, `$mod+p` picker |
-| Theming | matugen (cargo) + generators | see below |
-| GTK/Qt | adw-gtk3 + qt6ct | both toolkits follow the toggle |
+| Theming | one palette + generator with a WCAG gate | see below |
+| GTK/Qt | adw-gtk3 + qt6ct | both toolkits use the palette |
 | Portals | xdg-desktop-portal-wlr/-gtk | screen share, file pickers, dark/light for libadwaita |
 | Polkit | polkit-gnome (or lxqt) | GUI privilege prompts (virt-manager) |
 | Prompt | starship | cosmetic; follows terminal palette |
 
 The only third-party repo is COPR `errornointernet/quickshell` (opt-in
-prompt during install). matugen and swww build from crates.io via cargo.
+prompt during install).
 
-## Theme system
+## Theme
+
+One palette, defined once in `theme/colors.env`. `scripts/theme-gen.py` derives
+every app's colors from it — foot, waybar, sway borders, swaync, rofi, swaylock,
+quickshell, qt6ct — and **refuses to generate anything unreadable**: body text
+must clear 7:1 contrast and every text-bearing accent 3:1. That gate is not
+decoration; it rejected five colors during an earlier build, and a deliberately
+grim palette is exactly where contrast quietly slips.
 
 ```
-themes/dark/colors.env    ← single palette definition (Tokyo Night)
-themes/light/colors.env   ← single palette definition (Pastel Cat, hand-defined)
-        │ scripts/theme-gen.py  (contrast gate: fails the build if FG/BG < 7:1
-        ▼                        or any text color < 3:1)
-themes/<mode>/{foot.ini, waybar.css, sway-colors.conf, swaync-theme.css,
-               rofi.rasi, swaylock.conf, quickshell.json, qt6ct-colors.conf}
+theme/colors.env  ->  scripts/theme-gen.py  ->  theme/{foot.ini, colors.css,
+                          (WCAG gate)            sway-colors.conf, rofi.rasi,
+                                                 swaylock.conf, quickshell.json,
+                                                 qt6ct-colors.conf}
 ```
 
-At runtime `~/.config/rice/active` is a symlink to the deployed
-`themes/<mode>`; every app reads colors through it. `theme-toggle.sh`
-(`$mod+Shift+t`, also in the power menu):
-
-1. swaps the symlink — one atomic rename is the commit point;
-2. wallpaper via swww animated transition (or swaybg restart);
-3. sway colors live via `swaymsg`; waybar via SIGUSR2; swaync CSS reload;
-4. open foot terminals are recolored in place via OSC sequences;
-5. GTK via gsettings (+ portal for libadwaita), Qt via qt6ct scheme path;
-6. failures are collected and reported — a half-applied theme is treated
-   as a bug, and the notification tells you which step misbehaved.
-
-**Palette sourcing (as agreed):** matugen derives the *dark* UI chrome from
-`wallpapers/night.jpg` (`./scripts/theme-regen.sh`, optional — the committed
-palette is hand-tuned Tokyo Night). The *light* palette is hand-defined:
-deriving a light scheme from a night image produces mud. Terminal ANSI
-colors are hand-curated in both modes and gated on WCAG contrast.
+To change a color: edit `theme/colors.env`, run `./scripts/theme-gen.py`, then
+`./install.sh --configs-only`. There is no dark/light toggle, no active-theme
+symlink and no matugen — all removed as complexity that earned nothing.
 
 ## Keybinds
 
@@ -86,7 +76,7 @@ the build if any bind directive appears in a sway config file outside the
 generated one, so the popup and docs can't silently drift; the one allowed
 exception is bindsym inside a mode block (resize mode), which the TSV
 documents with a doc row. Conventions kept: `$mod+Return` terminal,
-`$mod+Shift+q` kill, `$mod+1…0` workspaces, `$mod+a` launcher, `$mod+b` browser.
+`$mod+q` kill, `$mod+1…0` workspaces, `$mod+a` launcher, `$mod+b` browser.
 
 Workspaces: **1** terminal · **2** VS Code · **3** browser · **4** VMs ·
 5–9 free · 10 misc. `$mod+Shift+c/w/v` jump to 2/3/4 and launch the app if

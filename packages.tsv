@@ -35,7 +35,7 @@ polkit	base	-	Privilege prompts
 python3	base	python3	Runs the theme and keybind generators
 jq	base	jq	JSON parsing in launch-or-focus, screenshot, display-menu
 unzip	base	unzip	Extracts the Nerd Font archive
-cargo	base	cargo	Builds matugen and swww from crates.io
+cargo	base	cargo	Builds swww from crates.io
 
 # ── deps: invoked by the rice's own scripts and configs ───────────────────
 wireplumber	deps	wpctl	volume.sh — WITHOUT THIS EVERY VOLUME KEY SILENTLY FAILS
@@ -72,12 +72,12 @@ gnome-keyring	integration	gnome-keyring-daemon	Secret Service. Without it VS Cod
 libsecret	integration	secret-tool	Secret Service client library and CLI
 git-credential-libsecret	integration	-	Lets git store credentials in the keyring
 qt6ct	integration	qt6ct	Qt application theming
-adw-gtk3-theme	integration	-	GTK theme matching both palettes
-papirus-icon-theme	integration	-	Icon theme for both palettes
+adw-gtk3-theme	integration	-	GTK theme matching the palette
+papirus-icon-theme	integration	-	Icon theme
 
 # ── optional: absence is reported but never treated as a failure ──────────
 starship	optional	starship	Shell prompt (cosmetic)
 swayimg	optional	swayimg	Image viewer referenced by a window rule
 python3-gobject	optional	-	GTK4 bindings for the Settings app
 gtk4	optional	-	Settings app toolkit
-libadwaita	optional	-	Settings app widgets and automatic dark/light
+libadwaita	optional	-	Settings app widgets

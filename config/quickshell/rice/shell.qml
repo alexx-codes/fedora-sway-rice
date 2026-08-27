@@ -10,7 +10,7 @@
 // service bindings that could break with a Quickshell update; if quickshell
 // is down entirely, the calling scripts fall back to rofi/notify-send.
 //
-// Colors come from ~/.config/rice/active/quickshell.json (the active theme).
+// Colors come from ~/.config/rice/theme/quickshell.json (one palette).
 
 import QtQuick
 import QtQuick.Layouts
@@ -45,7 +45,7 @@ ShellRoot {
 
     FileView {
         id: themeFile
-        path: Quickshell.env("HOME") + "/.config/rice/active/quickshell.json"
+        path: Quickshell.env("HOME") + "/.config/rice/theme/quickshell.json"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
@@ -110,7 +110,6 @@ ShellRoot {
                         { icon: "󰌾", label: "Lock",     accent: root.cAccent,  cmd: "swaylock -f" },
                         { icon: "󰍃", label: "Logout",   accent: root.cAccent2, cmd: "swaymsg exit" },
                         { icon: "󰒲", label: "Suspend",  accent: root.cPink,    cmd: "systemctl suspend" },
-                        { icon: "󰖔", label: "Theme",    accent: root.cPink,    cmd: "~/.config/rice/scripts/theme-toggle.sh" },
                         { icon: "󰜉", label: "Reboot",   accent: root.cAccent2, cmd: "systemctl reboot" },
                         { icon: "󰐥", label: "Shutdown", accent: root.cRed,     cmd: "systemctl poweroff" }
                     ]

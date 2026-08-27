@@ -83,10 +83,10 @@ fi
 for p in $(pkg_missing optional); do
     warn "$p not installed (optional) — $(pkg_field "$p" 4)"
 done
-for bin in qs matugen swww; do
+for bin in qs swww; do
     PATH="$HOME/.cargo/bin:$PATH" command -v "$bin" >/dev/null 2>&1 \
         && pass "$bin" \
-        || warn "$bin missing (quickshell=COPR, matugen/swww=cargo install; fallbacks active)"
+        || warn "$bin missing (quickshell=COPR, swww=cargo install; fallbacks active)"
 done
 
 sect "Is the deployed config actually current?"
@@ -194,12 +194,10 @@ else
 fi
 
 sect "Theme system"
-active=$(readlink "$HOME/.config/rice/active" 2>/dev/null || true)
-if [ -n "$active" ]; then
-    pass "active theme: $(basename "$active")"
+if [ -f "$HOME/.config/rice/theme/colors.env" ]; then
+    pass "theme: $(sed -n 's/^NAME=//p' "$HOME/.config/rice/theme/colors.env" | tr -d '\"')"
 else
-    # shellcheck disable=SC2088  # message text, not a path
-    fail "~/.config/rice/active symlink missing (run install.sh --configs-only)"
+    fail "theme not deployed (run install.sh --configs-only)"
 fi
 for w in night day; do
     found=""

@@ -105,7 +105,6 @@ ThinkPad F-row	XF86AudioMedia	hide	exec ~/.config/rice/scripts/launch.sh rice-se
 ThinkPad F-row	XF86ScreenSaver	locked,hide	exec ~/.config/rice/scripts/launch.sh swaylock -f	-
 ThinkPad F-row	XF86PowerOff	-	exec ~/.config/rice/scripts/powermenu.sh	Power button: open the power menu instead of instantly suspending
 ThinkPad F-row	Fn+Esc	doc	-	FnLock. Not a sway binding — firmware. With it ON the top row sends plain F1-F12 and none of the above fire.
-Theme	$mod+Shift+t	-	exec ~/.config/rice/scripts/theme-toggle.sh	Toggle dark (Tokyo Night) / light (pastel) everywhere at once
 Session & power	$mod+Shift+x	-	exec ~/.config/rice/scripts/launch.sh swaylock -f	Lock the screen
 Session & power	$mod+Shift+e	-	exec ~/.config/rice/scripts/powermenu.sh	Power menu (lock / logout / suspend / reboot / shutdown / theme)
 Session & power	$mod+Shift+r	-	reload	Reload the Sway configuration
