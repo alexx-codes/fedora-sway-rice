@@ -56,7 +56,50 @@ install_packages() {
     if [ ${#pkgs[@]} -eq 0 ]; then
         err "packages.tsv is missing or unreadable — cannot continue"; exit 1
     fi
-    ok "manifest: ${#pkgs[@]} packages across 5 tiers"
+
+    # TLP and power-profiles-daemon fight over the same knobs. If TLP is
+    # already running this machine, installing PPD would create exactly the
+    # conflict verify.sh warns about — so don't.
+    if systemctl is-active tlp >/dev/null 2>&1; then
+        local keep=()
+        local p
+        for p in "${pkgs[@]}"; do
+            [ "${p%%|*}" = "power-profiles-daemon" ] && continue
+            keep+=("$p")
+        done
+        pkgs=("${keep[@]}")
+        warn "TLP is active — skipping power-profiles-daemon (they conflict)"
+    fi
+
+    # Resolve each entry to a name this Fedora release actually ships. Names
+    # move between releases (fontawesome-fonts -> fontawesome4-fonts) and some
+    # packages are simply absent (squeekboard on F44), which dnf reports as a
+    # bare "No match for argument" that is easy to miss in a wall of output.
+    local resolved=() unavailable=() entry name found
+    for entry in "${pkgs[@]}"; do
+        found=""
+        local IFS='|'
+        for name in $entry; do
+            if dnf -q list --available "$name" >/dev/null 2>&1 \
+               || dnf -q list --installed "$name" >/dev/null 2>&1; then
+                found="$name"; break
+            fi
+        done
+        unset IFS
+        if [ -n "$found" ]; then
+            resolved+=("$found")
+        else
+            unavailable+=("$entry")
+        fi
+    done
+    pkgs=("${resolved[@]}")
+    ok "manifest: ${#pkgs[@]} packages available on this Fedora release"
+    if [ ${#unavailable[@]} -gt 0 ]; then
+        warn "not shipped by your Fedora release (skipping, not an error):"
+        for entry in "${unavailable[@]}"; do
+            warn "  ${entry%%|*} — $(pkg_field "$entry" 4)"
+        done
+    fi
 
     # dnf5 (F41+) and dnf4 (F40 and older) spell "keep going past a missing
     # package" differently; --skip-unavailable is dnf5-only and aborts dnf4.

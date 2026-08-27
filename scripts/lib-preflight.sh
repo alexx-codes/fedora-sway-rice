@@ -93,6 +93,21 @@ preflight_check() {
         pass "no competing package manager holding the lock"
     fi
 
+    # 5b. Repos that 404. A COPR with no build for your Fedora release makes
+    #     every single dnf transaction do four failed HTTP round-trips before
+    #     giving up. It is not fatal, but it is slow and it buries real errors
+    #     in noise — worth naming so it can be disabled.
+    if command -v dnf >/dev/null 2>&1; then
+        if timeout 30 dnf -q makecache --refresh 2>&1 | grep -q '404'; then
+            warn "at least one enabled repository returns 404 for this Fedora release"
+            warn "  every dnf run retries it before giving up. List them with:"
+            warn "    dnf repolist --enabled"
+            warn "  and disable the dead one with: sudo dnf copr disable <owner/project>"
+        else
+            pass "all enabled repositories reachable"
+        fi
+    fi
+
     # 6. Network + working dnf metadata
     if command -v dnf >/dev/null 2>&1; then
         if timeout 25 dnf -q repoquery --qf '%{name}' sway >/dev/null 2>&1; then
@@ -140,14 +155,31 @@ repair_auto() {
         return 0
     fi
     mapfile -t missing < <(pkg_missing base deps hardware integration)
-    if [ ${#missing[@]} -gt 0 ]; then
-        warn "installing ${#missing[@]} missing package(s): ${missing[*]}"
+    # Manifest entries may list alternatives as "a|b" for names that differ
+    # between Fedora releases. dnf must never see the literal pipe, and a
+    # package this release simply doesn't ship is not something to retry.
+    local install=() skipped=() entry name picked
+    for entry in "${missing[@]}"; do
+        [ "${entry%%|*}" = "power-profiles-daemon" ] \
+            && systemctl is-active tlp >/dev/null 2>&1 && continue
+        picked=""
+        local IFS='|'
+        for name in $entry; do
+            if dnf -q list --available "$name" >/dev/null 2>&1; then picked="$name"; break; fi
+        done
+        unset IFS
+        if [ -n "$picked" ]; then install+=("$picked"); else skipped+=("${entry%%|*}"); fi
+    done
+    if [ ${#install[@]} -gt 0 ]; then
+        warn "installing ${#install[@]} missing package(s): ${install[*]}"
         local skipflag="--setopt=strict=0"
         dnf --version 2>/dev/null | head -1 | grep -q '^dnf5' && skipflag="--skip-unavailable"
-        pf_would sudo dnf install -y "$skipflag" "${missing[@]}" && did=1
-    else
-        pass "all manifest packages installed"
+        pf_would sudo dnf install -y "$skipflag" "${install[@]}" && did=1
     fi
+    if [ ${#skipped[@]} -gt 0 ]; then
+        warn "not shipped by this Fedora release, skipping: ${skipped[*]}"
+    fi
+    [ ${#install[@]} -eq 0 ] && [ ${#skipped[@]} -eq 0 ] && pass "all manifest packages present"
 
     # Directories the scripts write into
     local d

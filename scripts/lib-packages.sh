@@ -44,10 +44,48 @@ pkg_for_binary() {
         NF >= 4 && $3 == b { print $1; exit }' "$m"
 }
 
-# pkg_missing [tier...] — installed-check every package, echo the absent ones.
+# pkg_present <package> — is this actually usable?
+#
+# Checks the BINARY first when the manifest names one, because that is what
+# actually matters: starship installed via cargo is present even though `rpm
+# -q starship` fails, and reporting it missing is a false alarm that trains
+# you to ignore the report. Falls back to rpm for packages that ship no
+# binary we call (fonts, themes, libraries).
+#
+# The package field may list alternatives separated by "|" — Fedora renames
+# things between releases (fontawesome-fonts became fontawesome4-fonts), and
+# hardcoding one name means a spurious failure on the release that renamed it.
+pkg_present() {
+    local entry="$1" bin name
+    bin=$(pkg_field "$entry" 3)
+    if [ -n "$bin" ] && [ "$bin" != "-" ]; then
+        PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH" \
+            command -v "$bin" >/dev/null 2>&1 && return 0
+    fi
+    local IFS='|'
+    for name in $entry; do
+        rpm -q "$name" >/dev/null 2>&1 && return 0
+    done
+    return 1
+}
+
+# pkg_installable <package> — does any of its names exist in the enabled repos?
+# Used to tell "your Fedora release doesn't ship this" apart from "install it".
+pkg_installable() {
+    local entry="$1" name
+    command -v dnf >/dev/null 2>&1 || return 0
+    local IFS='|'
+    for name in $entry; do
+        dnf -q list --available "$name" >/dev/null 2>&1 && return 0
+        dnf -q list --installed "$name" >/dev/null 2>&1 && return 0
+    done
+    return 1
+}
+
+# pkg_missing [tier...] — echo entries that are genuinely not usable.
 pkg_missing() {
     local p
     for p in $(pkg_list "$@"); do
-        rpm -q "$p" >/dev/null 2>&1 || echo "$p"
+        pkg_present "$p" || echo "$p"
     done
 }
