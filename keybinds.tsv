@@ -8,16 +8,17 @@
 # Edit this file, then run scripts/keybinds-gen.py to regenerate
 # config/sway/keybinds.conf and config/sway/KEYBINDS.md. The Quickshell popup
 # and rofi fallback read this file directly at runtime, so they can't drift.
-Launching apps	$mod+Return	-	exec foot	Open a terminal (Foot) on the current workspace
-Launching apps	$mod+a	-	exec rofi -show drun	App launcher (rofi)
+Launching apps	$mod+Return	-	exec ~/.config/rice/scripts/launch.sh foot	Open a terminal (Foot) on the current workspace
+Launching apps	$mod+a	-	exec ~/.config/rice/scripts/launch.sh rofi -show drun	App launcher (rofi)
 Launching apps	$mod+Shift+c	-	exec ~/.config/rice/scripts/launch-or-focus.sh 2 '^(code|Code)$' code --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations	Jump to workspace 2 and launch/focus VS Code
 Launching apps	$mod+b	-	exec ~/.config/rice/scripts/browser.sh	Open your default browser (whatever xdg-settings reports)
 Launching apps	$mod+Shift+v	-	exec ~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager	Jump to workspace 4 and launch/focus virt-manager
-Launching apps	$mod+Shift+s	-	exec rice-settings	Open the Settings app (theme, wallpaper, display, keys, system info)
+Launching apps	$mod+Shift+s	-	exec ~/.config/rice/scripts/launch.sh rice-settings	Open the Settings app (theme, wallpaper, display, keys, system info)
 Launching apps	$mod+p	-	exec ~/.config/rice/scripts/clipboard-pick.sh	Clipboard history picker (cliphist via rofi)
-Launching apps	$mod+n	-	exec swaync-client -t -sw	Toggle the notification / control center panel
+Launching apps	$mod+n	-	exec ~/.config/rice/scripts/launch.sh swaync-client -t -sw	Toggle the notification / control center panel
 Launching apps	$mod+o	-	exec ~/.config/rice/scripts/osk.sh	Toggle the on-screen keyboard (squeekboard, for touch)
-Window management	$mod+Shift+q	-	kill	Close the focused window
+Window management	$mod+q	-	kill	Close the focused window
+Window management	$mod+Shift+q	-	kill	Close the focused window (same thing; the i3 habit still works)
 Window management	$mod+f	-	fullscreen toggle	Toggle fullscreen for the focused window
 Window management	$mod+Shift+space	-	floating toggle	Toggle floating for the focused window
 Window management	$mod+space	-	focus mode_toggle	Switch focus between tiled and floating windows
@@ -83,9 +84,9 @@ Media & brightness	XF86AudioMute	locked	exec ~/.config/rice/scripts/volume.sh mu
 Media & brightness	XF86AudioMicMute	locked	exec ~/.config/rice/scripts/volume.sh micmute	Toggle microphone mute
 Media & brightness	XF86MonBrightnessUp	locked	exec ~/.config/rice/scripts/brightness.sh up	Screen brightness up 5%
 Media & brightness	XF86MonBrightnessDown	locked	exec ~/.config/rice/scripts/brightness.sh down	Screen brightness down 5%
-Media & brightness	XF86AudioPlay	locked	exec playerctl play-pause	Play / pause media
-Media & brightness	XF86AudioNext	locked	exec playerctl next	Next track
-Media & brightness	XF86AudioPrev	locked	exec playerctl previous	Previous track
+Media & brightness	XF86AudioPlay	locked	exec ~/.config/rice/scripts/launch.sh playerctl play-pause	Play / pause media
+Media & brightness	XF86AudioNext	locked	exec ~/.config/rice/scripts/launch.sh playerctl next	Next track
+Media & brightness	XF86AudioPrev	locked	exec ~/.config/rice/scripts/launch.sh playerctl previous	Previous track
 Media & brightness	Fn+Space	doc	-	Cycle the keyboard backlight (off / low / high)
 Media & brightness	XF86KbdLightOnOff	locked,hide	exec ~/.config/rice/scripts/brightness.sh kbd	-
 Media & brightness	XF86KbdBrightnessUp	locked,hide	exec ~/.config/rice/scripts/brightness.sh kbd	-
@@ -95,17 +96,17 @@ ThinkPad F-row	F8 (XF86WLAN)	doc	-	Toggle Wi-Fi on / off
 ThinkPad F-row	XF86WLAN	locked,hide	exec ~/.config/rice/scripts/toggle-wifi.sh	-
 ThinkPad F-row	XF86RFKill	locked,hide	exec ~/.config/rice/scripts/toggle-wifi.sh	-
 ThinkPad F-row	F9 (XF86Tools)	doc	-	Toggle the notification / control center panel
-ThinkPad F-row	XF86Tools	hide	exec swaync-client -t -sw	-
+ThinkPad F-row	XF86Tools	hide	exec ~/.config/rice/scripts/launch.sh swaync-client -t -sw	-
 ThinkPad F-row	F10 (XF86Bluetooth)	doc	-	Toggle Bluetooth on / off
 ThinkPad F-row	XF86Bluetooth	locked,hide	exec ~/.config/rice/scripts/toggle-bluetooth.sh	-
 ThinkPad F-row	F11 / F12	doc	-	Open the Settings app (firmware differs on which keysym it sends)
-ThinkPad F-row	XF86Favorites	hide	exec rice-settings	-
-ThinkPad F-row	XF86AudioMedia	hide	exec rice-settings	-
-ThinkPad F-row	XF86ScreenSaver	locked,hide	exec swaylock -f	-
+ThinkPad F-row	XF86Favorites	hide	exec ~/.config/rice/scripts/launch.sh rice-settings	-
+ThinkPad F-row	XF86AudioMedia	hide	exec ~/.config/rice/scripts/launch.sh rice-settings	-
+ThinkPad F-row	XF86ScreenSaver	locked,hide	exec ~/.config/rice/scripts/launch.sh swaylock -f	-
 ThinkPad F-row	XF86PowerOff	-	exec ~/.config/rice/scripts/powermenu.sh	Power button: open the power menu instead of instantly suspending
 ThinkPad F-row	Fn+Esc	doc	-	FnLock. Not a sway binding — firmware. With it ON the top row sends plain F1-F12 and none of the above fire.
 Theme	$mod+Shift+t	-	exec ~/.config/rice/scripts/theme-toggle.sh	Toggle dark (Tokyo Night) / light (pastel) everywhere at once
-Session & power	$mod+Shift+x	-	exec swaylock -f	Lock the screen
+Session & power	$mod+Shift+x	-	exec ~/.config/rice/scripts/launch.sh swaylock -f	Lock the screen
 Session & power	$mod+Shift+e	-	exec ~/.config/rice/scripts/powermenu.sh	Power menu (lock / logout / suspend / reboot / shutdown / theme)
 Session & power	$mod+Shift+r	-	reload	Reload the Sway configuration
 Session & power	$mod+Shift+slash	-	exec ~/.config/rice/scripts/cheatsheet.sh	This cheatsheet, as an on-screen popup

@@ -467,9 +467,24 @@ post_setup() {
     echo "  keybinds: ~/.config/sway/KEYBINDS.md or \$mod+Shift+/ in-session."
 }
 
+reload_sway_if_running() {
+    # A redeploy that you then have to remember to activate is a redeploy that
+    # silently does nothing — which is exactly how new keybindings appeared not
+    # to work. If sway is up, apply them now.
+    if [ -n "${SWAYSOCK:-}" ] || swaymsg -t get_version >/dev/null 2>&1; then
+        if swaymsg reload >/dev/null 2>&1; then
+            ok "sway reloaded — the new config is live now"
+        else
+            warn "sway is running but reload failed; check: ./scripts/validate-config.sh"
+        fi
+    else
+        ok "sway is not running; the config applies at your next login"
+    fi
+}
+
 case "$mode" in
-    --configs-only)  deploy_configs; deploy_services ;;
+    --configs-only)  deploy_configs; deploy_services; reload_sway_if_running ;;
     --packages-only) install_packages ;;
-    full|--full)     install_packages; deploy_configs; deploy_services; configure_lid; post_setup ;;
+    full|--full)     install_packages; deploy_configs; deploy_services; configure_lid; post_setup; reload_sway_if_running ;;
     *) echo "usage: install.sh [--configs-only|--packages-only]"; exit 2 ;;
 esac

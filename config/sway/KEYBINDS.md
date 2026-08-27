@@ -10,7 +10,8 @@
 
 | Keys | Action |
 |------|--------|
-| `$mod+Shift+q` | Close the focused window |
+| `$mod+q` | Close the focused window |
+| `$mod+Shift+q` | Close the focused window (same thing; the i3 habit still works) |
 | `$mod+f` | Toggle fullscreen for the focused window |
 | `$mod+Shift+space` | Toggle floating for the focused window |
 | `$mod+space` | Switch focus between tiled and floating windows |

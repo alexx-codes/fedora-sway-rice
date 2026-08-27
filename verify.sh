@@ -89,6 +89,34 @@ for bin in qs matugen swww; do
         || warn "$bin missing (quickshell=COPR, matugen/swww=cargo install; fallbacks active)"
 done
 
+sect "Is the deployed config actually current?"
+# The single most confusing failure mode: you pull new commits, nothing
+# changes, and the keys you just read about don't exist — because the repo
+# and ~/.config are different things and nothing said so.
+_drift=0
+for f in sway/keybinds.conf sway/config sway/workspaces.conf sway/windowrules.conf; do
+    _repo="$RICE_REPO/config/$f"
+    _live="$HOME/.config/$f"
+    [ -f "$_repo" ] || continue
+    if [ ! -f "$_live" ]; then
+        fail "$f is not deployed at all"
+        _drift=$((_drift + 1))
+    elif ! diff -q <(sed "s|__HOME__|$HOME|g; s|__THERMAL_ZONE__|.*|g; s|__PANEL_SCALE__|.*|g" "$_repo") \
+                   "$_live" >/dev/null 2>&1; then
+        # placeholders make an exact diff meaningless; compare bindings only
+        if [ "$f" = "sway/keybinds.conf" ] && ! diff -q "$_repo" "$_live" >/dev/null 2>&1; then
+            fail "$f DIFFERS from the repo — sway is running older bindings"
+            _drift=$((_drift + 1))
+        fi
+    fi
+done
+if [ "$_drift" -gt 0 ]; then
+    fail "  your session is not running what the repo says. Fix with:"
+    fail "     ./install.sh --configs-only && swaymsg reload"
+else
+    pass "deployed config matches the repo"
+fi
+
 sect "Keybindings vs installed binaries"
 # This is the automated form of "I pressed a key and nothing happened": every
 # exec target in the generated keybinds.conf is resolved back through
