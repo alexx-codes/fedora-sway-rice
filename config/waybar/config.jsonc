@@ -1,32 +1,59 @@
 // Waybar — fedora-sway-rice
-// System load (CPU / RAM / temp / net) sits right of center, always visible:
-// this machine runs KVM guests and load must be readable at a glance.
-// The custom/vms module shows running libvirt domains (hidden when libvirt
-// isn't reachable). Colors come from ~/.config/waybar/theme.css, a symlink
-// into the active theme — reloaded by SIGUSR2 from theme-toggle.sh.
+//
+// Layout borrows the pattern most modern configs settle on: a GROUP with a
+// hover drawer. The four system-load modules (cpu, memory, disk, temperature)
+// collapse behind one icon and slide out on hover, which is what keeps a
+// 13-module right side readable at 1440 logical px.
+//
+// Polling is deliberately restrained. An earlier revision woke the bar ~91
+// times a minute (cpu and network every 2s) and forked a full `virsh` client
+// every 15s, which is real background load on a laptop. Intervals below are
+// roughly a third of that. Modules that are event-driven rather than polled
+// (privacy, idle_inhibitor, power-profiles-daemon, systemd-failed-units, tray)
+// cost nothing to keep visible.
+//
+// Colors come from theme.css, generated from theme/colors.env.
 {
     "layer": "top",
     "position": "top",
-    "height": 32,
+    "height": 30,
     "spacing": 4,
 
-    "modules-left": ["sway/workspaces", "sway/mode", "sway/window"],
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window"],
     "modules-center": ["clock"],
     "modules-right": [
+        "privacy",
+        "systemd-failed-units",
         "custom/vms",
-        "cpu",
-        "memory",
-        "disk",
-        "temperature",
+        "group/sysload",
         "network",
         "pulseaudio",
         "backlight",
+        "power-profiles-daemon",
+        "idle_inhibitor",
         "battery",
         "tray",
         "custom/osk",
         "custom/notification",
         "custom/power"
     ],
+
+    // ---- the drawer: one icon, four stats on hover ----------------------
+    "group/sysload": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 300,
+            "children-class": "sysload-child",
+            "transition-left-to-right": false
+        },
+        "modules": ["custom/sysload-icon", "cpu", "memory", "disk", "temperature"]
+    },
+
+    "custom/sysload-icon": {
+        "format": "󰄪",
+        "tooltip-format": "System load — hover to expand",
+        "on-click": "foot -e btop"
+    },
 
     "sway/workspaces": {
         "disable-scroll": false,
@@ -40,41 +67,85 @@
         }
     },
 
-    "sway/mode": {
-        "format": "<span style=\"italic\">{}</span>"
+    "sway/mode": { "format": "<span style=\"italic\">{}</span>" },
+
+    "sway/scratchpad": {
+        "format": "{icon} {count}",
+        "show-empty": false,
+        "format-icons": ["", "󰎃"],
+        "tooltip": true,
+        "tooltip-format": "{app}: {title}"
     },
 
-    "sway/window": {
-        "max-length": 60,
-        "icon": false
-    },
+    "sway/window": { "max-length": 50, "icon": false },
 
     "clock": {
         "format": "{:%a %b %d  %H:%M}",
         "tooltip-format": "<tt><small>{calendar}</small></tt>",
         "calendar": {
             "mode": "month",
-            "format": {
-                "today": "<b><u>{}</u></b>"
-            }
+            "format": { "today": "<b><u>{}</u></b>" }
         }
     },
 
+    // ---- event-driven modules: no polling cost --------------------------
+    "privacy": {
+        // Lights up when something is using the mic, camera, or capturing the
+        // screen — worth having on a machine that runs VMs and screenshares.
+        "icon-size": 14,
+        "transition-duration": 250,
+        "modules": [
+            { "type": "screenshare", "tooltip": true },
+            { "type": "audio-in", "tooltip": true }
+        ]
+    },
+
+    "systemd-failed-units": {
+        // This rice runs ~10 systemd user services. Without this, a dead
+        // waybar/swaync/wallpaper unit is invisible until you notice the
+        // symptom and go looking. Now it just shows up.
+        "hide-on-ok": true,
+        "format": "󰀦 {nr_failed}",
+        "format-ok": "",
+        "system": false,
+        "user": true
+    },
+
+    "idle_inhibitor": {
+        // One click to stop the screen locking — handy watching a VM install.
+        "format": "{icon}",
+        "format-icons": { "activated": "󰅶", "deactivated": "󰛊" },
+        "tooltip-format-activated": "Idle inhibited — screen will not lock",
+        "tooltip-format-deactivated": "Idle normal"
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "󰗑",
+            "performance": "󰓅",
+            "balanced": "󰾅",
+            "power-saver": "󰾆"
+        }
+    },
+
+    // ---- polled modules, at restrained intervals ------------------------
     "custom/vms": {
-        // Running libvirt domain count; tooltip lists the domains.
-        // exec-if hides the module entirely if virsh is missing or the
-        // user can't reach qemu:///system (e.g. not in the libvirt group).
+        // Running libvirt domain count. Forks a virsh client, so it polls at
+        // 30s rather than 15s; exec-if hides it when libvirt is unreachable.
         "exec": "~/.config/rice/scripts/libvirt-status.sh",
         "exec-if": "command -v virsh",
         "return-type": "json",
-        "interval": 15,
+        "interval": 30,
         "format": "󰢹 {}",
         "on-click": "~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager"
     },
 
     "cpu": {
         "format": "󰻠 {usage}%",
-        "interval": 2,
+        "interval": 5,
         "states": { "warning": 70, "critical": 90 },
         "on-click": "foot -e btop"
     },
@@ -82,32 +153,30 @@
     "memory": {
         "format": "󰍛 {used:0.1f}G",
         "tooltip-format": "{used:0.1f}G used / {total:0.1f}G ({percentage}%)\nswap: {swapUsed:0.1f}G",
-        "interval": 5,
+        "interval": 10,
         "states": { "warning": 70, "critical": 90 },
         "on-click": "foot -e btop"
     },
 
     "disk": {
-        // On a 512 GB single-volume machine running qcow2 VM images, root
-        // filesystem headroom is the gauge that matters most — images grow
-        // silently until the filesystem is full.
+        // On 512 GB running qcow2 images, root headroom is the gauge that
+        // matters most — images grow silently until the filesystem is full.
         "path": "/",
         "format": "󰋊 {free}",
         "tooltip-format": "{used} used / {total} ({percentage_used}% full)\nfree: {free}",
         "states": { "warning": 80, "critical": 92 },
-        "interval": 60
+        "interval": 120
     },
 
     "temperature": {
-        // __THERMAL_ZONE__ is resolved at deploy time by install.sh: it scans
-        // /sys/class/thermal for the CPU package sensor (x86_pkg_temp/TCPU)
-        // instead of trusting zone 0, which on ThinkPads is often acpitz
-        // (chassis) and reads plausible-but-wrong. verify.sh reports the pick.
+        // __THERMAL_ZONE__ is resolved at deploy time by install.sh, which
+        // finds the CPU package sensor rather than trusting zone 0 (often
+        // acpitz/chassis on ThinkPads, plausible-looking but wrong).
         "thermal-zone": __THERMAL_ZONE__,
         "critical-threshold": 85,
         "format": "{icon} {temperatureC}°C",
         "format-icons": ["", "", ""],
-        "interval": 5
+        "interval": 10
     },
 
     "network": {
@@ -117,7 +186,7 @@
         "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
         "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr} via {gwaddr}",
         "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr} via {gwaddr}",
-        "interval": 2,
+        "interval": 5,
         "on-click": "foot -e nmtui"
     },
 
@@ -139,12 +208,17 @@
         "format-charging": "󰂄 {capacity}%",
         "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
         "states": { "warning": 25, "critical": 10 },
-        "interval": 30
+        "interval": 60
     },
 
-    "tray": {
-        "icon-size": 16,
-        "spacing": 8
+    "tray": { "icon-size": 16, "spacing": 8 },
+
+    "custom/osk": {
+        // The one control that must be reachable by touch alone — a keybind
+        // cannot summon a keyboard when there is no keyboard.
+        "format": "󰌌",
+        "tooltip": false,
+        "on-click": "~/.config/rice/scripts/osk.sh"
     },
 
     "custom/notification": {
@@ -164,15 +238,6 @@
         },
         "on-click": "swaync-client -t -sw",
         "tooltip": false
-    },
-
-    "custom/osk": {
-        // Tap target for the on-screen keyboard — the one control that must
-        // be reachable by touch alone (a keybind can't summon a keyboard
-        // when there's no keyboard).
-        "format": "󰌌",
-        "tooltip": false,
-        "on-click": "~/.config/rice/scripts/osk.sh"
     },
 
     "custom/power": {

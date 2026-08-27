@@ -144,6 +144,32 @@ else
     warn "keybinds.conf not found — run ./install.sh --configs-only"
 fi
 
+sect "Waybar module support"
+if command -v waybar >/dev/null 2>&1; then
+    _wv=$(waybar --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    if [ -n "$_wv" ]; then
+        # privacy, systemd-failed-units and power-profiles-daemon all landed
+        # in 0.10. Waybar disables an unknown module and carries on rather
+        # than refusing to start, so an older version degrades, not breaks.
+        _maj=${_wv%%.*}; _min=${_wv#*.}
+        if [ "$_maj" -gt 0 ] || [ "$_min" -ge 10 ] 2>/dev/null; then
+            pass "waybar $_wv (privacy, systemd-failed-units, power-profiles all supported)"
+        else
+            warn "waybar $_wv is older than 0.10 — privacy, systemd-failed-units and"
+            warn "  power-profiles-daemon will be disabled by waybar; the rest still works"
+        fi
+    else
+        warn "could not read the waybar version"
+    fi
+    if [ -f "$HOME/.config/waybar/config.jsonc" ]; then
+        systemctl --user is-active waybar.service >/dev/null 2>&1 \
+            && pass "waybar running" \
+            || warn "waybar not running (journalctl --user -u waybar -e)"
+    fi
+else
+    fail "waybar not installed"
+fi
+
 sect "Brightness key prerequisites"
 if id -nG 2>/dev/null | tr ' ' '\n' | grep -qx video; then
     pass "in the 'video' group"

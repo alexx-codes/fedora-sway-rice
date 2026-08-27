@@ -1,109 +1,161 @@
-/* Waybar — fedora-sway-rice
- * theme.css is a symlink into ~/.config/rice/active/ (the current palette).
- * theme-toggle.sh swaps the active dir and SIGUSR2s waybar to reload. */
+/* Waybar — fedora-sway-rice, Ashfall palette.
+ * theme.css is generated from theme/colors.env and copied in by install.sh.
+ *
+ * Grim means restrained, not muddy: a flat near-black bar, hairline
+ * separation instead of pills everywhere, and color used only where it
+ * carries meaning (warning, critical, privacy, failed units). */
 @import "theme.css";
 
 * {
-    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", sans-serif;
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", monospace;
     font-size: 13px;
     min-height: 0;
+    /* kills the default GTK focus ring on every module */
+    border: none;
+    border-radius: 0;
 }
 
 window#waybar {
-    background: alpha(@bg, 0.92);
+    background: @bg;
     color: @fg;
-    border-bottom: 2px solid @bg-hl;
+    border-bottom: 1px solid @border;
 }
+
+window#waybar.hidden { opacity: 0.0; }
+
+/* ---- left ------------------------------------------------------------- */
+#workspaces { margin-left: 4px; }
 
 #workspaces button {
     padding: 0 8px;
-    margin: 3px 2px;
-    border-radius: 8px;
-    color: @fg-dim;
+    color: @muted;
     background: transparent;
-    border: none;
+    /* a top rule instead of a pill: quieter, and reads as a tab strip */
+    border-top: 2px solid transparent;
 }
 
-#workspaces button.focused {
-    background: @bg-sel;
+#workspaces button:hover {
+    background: @bg-hl;
+    color: @fg-dim;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+#workspaces button.focused,
+#workspaces button.visible {
     color: @fg;
+    border-top: 2px solid @accent;
+    background: @bg-alt;
 }
 
 #workspaces button.urgent {
-    background: @red;
     color: @bg;
+    background: @red;
 }
 
 #mode {
-    background: @pink;
     color: @bg;
+    background: @accent2;
     padding: 0 10px;
-    margin: 3px 2px;
-    border-radius: 8px;
     font-weight: bold;
 }
 
-#window {
-    color: @fg-dim;
+#scratchpad {
+    color: @muted;
     padding: 0 8px;
 }
+#scratchpad.empty { padding: 0; }
 
+#window {
+    color: @fg-dim;
+    padding: 0 10px;
+}
+window#waybar.empty #window { padding: 0; }
+
+/* ---- center ----------------------------------------------------------- */
 #clock {
-    color: @accent2;
+    color: @fg;
     font-weight: bold;
     padding: 0 12px;
 }
 
+/* ---- right ------------------------------------------------------------ */
+#privacy,
+#systemd-failed-units,
 #custom-vms,
-#cpu,
-#memory,
-#disk,
-#temperature,
+#sysload,
 #network,
 #pulseaudio,
 #backlight,
+#power-profiles-daemon,
+#idle_inhibitor,
 #battery,
 #tray,
 #custom-osk,
 #custom-notification,
 #custom-power {
     padding: 0 9px;
-    margin: 3px 2px;
-    border-radius: 8px;
-    background: alpha(@bg-hl, 0.55);
+    color: @fg-dim;
+    background: transparent;
 }
 
-#custom-vms      { color: @accent2; }
-#custom-vms.idle { color: @muted; }
-#custom-vms.error{ color: @orange; }
-#cpu             { color: @accent; }
-#memory          { color: @teal; }
-#disk            { color: @accent2; }
-#temperature     { color: @yellow; }
-#network         { color: @cyan; }
-#pulseaudio      { color: @pink; }
-#backlight       { color: @orange; }
-#battery         { color: @green; }
-#custom-osk      { color: @fg-dim; }
+/* The drawer: the icon stays put, the stats slide out beside it. */
+#custom-sysload-icon { color: @accent; padding: 0 9px; }
+#sysload { background: transparent; }
+#sysload.sysload-child { padding: 0 7px; }
+
+#cpu, #memory, #disk, #temperature {
+    padding: 0 7px;
+    color: @fg-dim;
+    background: @bg-alt;
+}
+
+#custom-vms   { color: @accent2; }
+#custom-vms.idle  { color: @muted; }
+#custom-vms.error { color: @orange; }
+
+#network      { color: @fg-dim; }
+#network.disconnected { color: @orange; }
+#pulseaudio   { color: @fg-dim; }
+#pulseaudio.muted { color: @muted; }
+#backlight    { color: @fg-dim; }
+#battery      { color: @fg-dim; }
+#custom-osk   { color: @muted; }
 #custom-notification { color: @fg-dim; }
-#custom-power    { color: @red; }
+#custom-power { color: @muted; }
+#custom-power:hover  { color: @red; }
+
+/* Meaningful color only — these are the things worth interrupting for. */
+#idle_inhibitor.activated  { color: @accent2; }
+#power-profiles-daemon.performance  { color: @orange; }
+#power-profiles-daemon.power-saver  { color: @green; }
+
+#privacy { color: @pink; }
+#privacy-item.screenshare { color: @pink; }
+#privacy-item.audio-in    { color: @orange; }
+
+#systemd-failed-units {
+    color: @bg;
+    background: @red;
+    font-weight: bold;
+    padding: 0 9px;
+}
 
 #cpu.warning, #memory.warning, #disk.warning, #battery.warning {
     color: @orange;
 }
 
-#cpu.critical, #memory.critical, #disk.critical, #temperature.critical, #battery.critical {
+#cpu.critical, #memory.critical, #disk.critical,
+#temperature.critical, #battery.critical {
     color: @bg;
     background: @red;
 }
 
-#battery.charging {
-    color: @green;
-}
+#battery.charging { color: @green; }
 
 tooltip {
     background: @bg-alt;
     color: @fg;
     border: 1px solid @border;
-    border-radius: 8px;
 }
+tooltip label { color: @fg; }
