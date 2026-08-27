@@ -20,7 +20,7 @@
 # ── base: the compositor and shell ────────────────────────────────────────
 sway	base	sway	The compositor itself
 sway-systemd	base	-	Provides sway-session.target; the supervision backbone
-swaybg	base	swaybg	Wallpaper fallback when swww is unavailable
+swaybg	base	swaybg	Draws the wallpaper (swww only if you opt in)
 swayidle	base	swayidle	Idle/lock/suspend management
 swaylock	base	swaylock	Screen lock
 foot	base	foot	Terminal (Wayland-native, GPU-accelerated)
@@ -35,7 +35,7 @@ polkit	base	-	Privilege prompts
 python3	base	python3	Runs the theme and keybind generators
 jq	base	jq	JSON parsing in launch-or-focus, screenshot, display-menu
 unzip	base	unzip	Extracts the Nerd Font archive
-cargo	base	cargo	Builds swww from crates.io
+cargo	optional	cargo	Only needed if you opt into swww for animated wallpapers
 
 # ── deps: invoked by the rice's own scripts and configs ───────────────────
 wireplumber	deps	wpctl	volume.sh — WITHOUT THIS EVERY VOLUME KEY SILENTLY FAILS

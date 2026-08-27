@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 # wallpaper-daemon.sh — ExecStart for wallpaper-daemon.service.
-# Prefers swww (animated transitions for the theme toggle); falls back to
-# swaybg with the current wallpaper if swww isn't installed, so the desktop
-# never ends up wallpaper-less. systemd restarts us if either daemon dies.
+#
+# swaybg by default now. swww existed to animate the transition between the
+# dark and light palettes; with the theme toggle gone there is no transition
+# to animate, and swww is a second daemon holding the framebuffer and doing
+# GPU work for a picture that never changes. swaybg draws it once and idles.
+#
+# swww is still honored if you have it installed and set RICE_USE_SWWW=1 —
+# useful if you want animated wallpapers for their own sake.
 set -u
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 
-if command -v swww-daemon >/dev/null 2>&1; then
+wall="$HOME/.config/rice/wallpapers/current"
+
+if [ "${RICE_USE_SWWW:-0}" = 1 ] && command -v swww-daemon >/dev/null 2>&1; then
     exec swww-daemon
 fi
 
-wall="$HOME/.config/rice/wallpapers/current"
 if [ -e "$wall" ]; then
     exec swaybg -i "$wall" -m fill
 fi
-# Last resort: solid color so the session still looks intentional
-exec swaybg -c '#1a1b26'
+
+# Last resort: the palette's background color, so an absent wallpaper still
+# looks deliberate rather than broken.
+bg=$(sed -n 's/^BG=//p' "$HOME/.config/rice/theme/colors.env" 2>/dev/null)
+exec swaybg -c "#${bg:-0d0e11}"

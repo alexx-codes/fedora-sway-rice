@@ -4,6 +4,7 @@
 #   ./verify.sh              read-only health check (default; CHANGES NOTHING)
 #   ./verify.sh --preflight  only the checks that decide whether install.sh
 #                            can succeed. install.sh runs this itself.
+#   ./verify.sh --perf       diagnose a sluggish session (read-only)
 #   ./verify.sh --fix        repair what is safely repairable, prompt for the
 #                            rest. Never deletes anything.
 #   ./verify.sh --fix --dry-run   show exactly what --fix would do, do nothing
@@ -29,6 +30,7 @@ MODE=health
 for a in "$@"; do
     case "$a" in
         --preflight) MODE=preflight ;;
+        --perf)      MODE=perf ;;
         --fix)       MODE=fix ;;
         --dry-run)   PREFLIGHT_DRYRUN_REQUESTED=1 ;;
         -h|--help)
@@ -44,6 +46,10 @@ ME=$(id -un)
 # shellcheck source=scripts/lib-preflight.sh
 . "$RICE_REPO/scripts/lib-preflight.sh"
 PREFLIGHT_DRYRUN=${PREFLIGHT_DRYRUN_REQUESTED:-0}
+
+if [ "$MODE" = perf ]; then
+    exec "$RICE_REPO/scripts/diagnose-perf.sh"
+fi
 
 if [ "$MODE" = preflight ]; then
     preflight_check
@@ -83,11 +89,9 @@ fi
 for p in $(pkg_missing optional); do
     warn "$p not installed (optional) — $(pkg_field "$p" 4)"
 done
-for bin in qs swww; do
-    PATH="$HOME/.cargo/bin:$PATH" command -v "$bin" >/dev/null 2>&1 \
-        && pass "$bin" \
-        || warn "$bin missing (quickshell=COPR, swww=cargo install; fallbacks active)"
-done
+PATH="$HOME/.cargo/bin:$PATH" command -v qs >/dev/null 2>&1 \
+    && pass "quickshell" \
+    || warn "quickshell missing (COPR; power menu/OSD/cheatsheet use rofi fallbacks)"
 
 sect "Is the deployed config actually current?"
 # The single most confusing failure mode: you pull new commits, nothing

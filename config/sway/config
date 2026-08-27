@@ -96,7 +96,9 @@ seat seat0 xcursor_theme Adwaita 24
 
 # ---------------------------------------------------------------- behavior
 floating_modifier $mod normal
-focus_follows_mouse yes
+# TrackPoint drift is enough to steal focus between windows with this on,
+# which reads as jank. Off means focus follows your intent, not the stick.
+focus_follows_mouse no
 workspace_auto_back_and_forth no
 popup_during_fullscreen smart
 

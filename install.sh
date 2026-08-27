@@ -9,8 +9,7 @@
 # Principles baked in:
 #   * Fedora/dnf only; systemd user services for everything supervised.
 #   * The only third-party repo is COPR errornointernet/quickshell, and it is
-#     prompted for explicitly. swww builds from source via cargo
-#     (crates.io) instead of adding more COPRs.
+#     prompted for explicitly. Everything else comes from Fedora proper.
 #   * Nothing is deleted: existing configs are moved to <name>.bak-<epoch>.
 #   * No hardcoded usernames: repo files use __HOME__ where an absolute path
 #     is unavoidable; it is substituted with your real $HOME at deploy time.
@@ -113,14 +112,11 @@ install_packages() {
         fi
     fi
 
-    # ------------------------------------------------------------ cargo builds
-    say "Building swww from source (cargo, crates.io — no COPR)"
-    if command -v swww >/dev/null 2>&1; then ok "swww present"
-    else
-        cargo install --locked swww \
-            && ok "swww built" \
-            || warn "swww build failed — wallpaper-daemon falls back to swaybg (no animated transitions)"
-    fi
+    # swww is no longer built by default: with the theme toggle gone there is
+    # no transition to animate, and swaybg draws the wallpaper once and idles
+    # instead of keeping a second daemon on the framebuffer. If you want
+    # animated wallpapers for their own sake:
+    #   cargo install --locked swww  &&  RICE_USE_SWWW=1 in the service env
 
     # ------------------------------------------------------------ nerd font
     say "Installing JetBrainsMono Nerd Font (waybar/quickshell glyphs)"
