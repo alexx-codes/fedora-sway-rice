@@ -1,122 +1,211 @@
 // Waybar — fedora-sway-rice
 //
-// Layout borrows the pattern most modern configs settle on: a GROUP with a
-// hover drawer. The four system-load modules (cpu, memory, disk, temperature)
-// collapse behind one icon and slide out on hover, which is what keeps a
-// 13-module right side readable at 1440 logical px.
+// Floating islands: the bar itself is transparent and every group is a
+// rounded pill sitting over the wallpaper. Grouping is what makes this
+// readable — a flat run of 15 modules at 1440 logical px reads as noise,
+// while six pills read as six things.
 //
-// Polling is deliberately restrained. An earlier revision woke the bar ~91
-// times a minute (cpu and network every 2s) and forked a full `virsh` client
-// every 15s, which is real background load on a laptop. Intervals below are
-// roughly a third of that. Modules that are event-driven rather than polled
-// (privacy, idle_inhibitor, power-profiles-daemon, systemd-failed-units, tray)
-// cost nothing to keep visible.
+// Polling stays restrained. An earlier revision woke the bar ~91 times a
+// minute; the intervals below are roughly a third of that. Modules that are
+// event-driven rather than polled (mpris, privacy, idle_inhibitor,
+// power-profiles-daemon, systemd-failed-units) cost nothing to keep visible.
+// The hover-drawer that used to hide the load modules is gone — they are all
+// visible now — but its intervals are kept, so the layout change does not
+// quietly bring the polling cost back.
 //
-// Colors come from theme.css, generated from theme/colors.env.
+// Colors come from theme.css, which is either the static Ashfall palette or
+// a wallpaper-derived one (scripts/theme-from-wallpaper.sh). Nothing here
+// depends on which.
 {
     "layer": "top",
     "position": "top",
-    "height": 30,
-    "spacing": 4,
+    "height": 34,
+    "margin-top": 6,
+    "margin-left": 8,
+    "margin-right": 8,
+    "spacing": 6,
 
-    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window"],
-    "modules-center": ["clock"],
+    "modules-left": ["group/link", "sway/workspaces", "sway/window"],
+    "modules-center": ["group/media"],
     "modules-right": [
-        "privacy",
         "systemd-failed-units",
-        "custom/vms",
         "group/sysload",
-        "network",
-        "pulseaudio",
-        "backlight",
-        "power-profiles-daemon",
-        "idle_inhibitor",
-        "battery",
-        "tray",
-        "custom/osk",
-        "custom/notification",
-        "custom/power"
+        "group/io",
+        "group/controls",
+        "group/time",
+        "custom/notification"
     ],
 
-    // ---- the drawer: one icon, four stats on hover ----------------------
-    "group/sysload": {
+    // ---- islands --------------------------------------------------------
+    "group/link": {
         "orientation": "horizontal",
-        "drawer": {
-            "transition-duration": 300,
-            "children-class": "sysload-child",
-            "transition-left-to-right": false
-        },
-        "modules": ["custom/sysload-icon", "cpu", "memory", "disk", "temperature"]
+        "modules": ["bluetooth", "network"]
     },
 
-    "custom/sysload-icon": {
-        "format": "󰄪",
-        "tooltip-format": "System load — hover to expand",
-        "on-click": "foot -e btop"
+    "group/media": {
+        "orientation": "horizontal",
+        "modules": ["image#albumart", "mpris"]
+    },
+
+    "group/sysload": {
+        "orientation": "horizontal",
+        "modules": ["cpu", "memory", "temperature", "network#speed", "disk"]
+    },
+
+    "group/io": {
+        "orientation": "horizontal",
+        "modules": ["pulseaudio", "battery"]
+    },
+
+    "group/controls": {
+        "orientation": "horizontal",
+        "modules": ["power-profiles-daemon", "idle_inhibitor", "custom/osk"]
+    },
+
+    "group/time": {
+        "orientation": "horizontal",
+        "modules": ["clock#date", "clock#time"]
+    },
+
+    // ---- left -----------------------------------------------------------
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "󰂲",
+        "format-off": "󰂲",
+        "format-connected": "󰂱",
+        "tooltip-format": "{controller_alias}\n{status}",
+        "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "on-click": "~/.config/rice/scripts/toggle-bluetooth.sh"
+    },
+
+    "network": {
+        // Icon only — the throughput readout lives in the sysload island so
+        // this one stays a glanceable "am I online" light.
+        "format-wifi": "{icon}",
+        "format-ethernet": "󰈀",
+        "format-disconnected": "󰤮",
+        "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr} via {gwaddr}",
+        "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr} via {gwaddr}",
+        "tooltip-format-disconnected": "offline",
+        "interval": 15,
+        "on-click": "foot -e nmtui"
     },
 
     "sway/workspaces": {
         "disable-scroll": false,
-        "format": "{icon}",
-        "format-icons": {
-            "1": "1 ",
-            "2": "2 󰨞",
-            "3": "3 󰈹",
-            "4": "4 󰢹",
-            "10": "10 󰭹"
-        }
+        "format": "{name}"
     },
 
-    "sway/mode": { "format": "<span style=\"italic\">{}</span>" },
-
-    "sway/scratchpad": {
-        "format": "{icon} {count}",
-        "show-empty": false,
-        "format-icons": ["", "󰎃"],
-        "tooltip": true,
-        "tooltip-format": "{app}: {title}"
+    "sway/window": {
+        "max-length": 45,
+        "icon": false,
+        "tooltip": true
     },
 
-    "sway/window": { "max-length": 50, "icon": false },
-
-    "clock": {
-        "format": "{:%a %b %d  %H:%M}",
-        "tooltip-format": "<tt><small>{calendar}</small></tt>",
-        "calendar": {
-            "mode": "month",
-            "format": { "today": "<b><u>{}</u></b>" }
-        }
+    // ---- centre ---------------------------------------------------------
+    "image#albumart": {
+        // No exec-if here, deliberately. When exec-if fails waybar skips the
+        // exec and KEEPS the last image, so stopping the player left an
+        // orphaned cover floating in an otherwise empty island. The script is
+        // the single source of truth instead: it prints a path or prints
+        // nothing, and empty output is what actually clears the image. It is
+        // already cheap with no player — one playerctl call and an early exit.
+        "exec": "~/.config/rice/scripts/mpris-art.sh",
+        "size": 22,
+        "interval": 3,
+        "tooltip": false
     },
 
-    // ---- event-driven modules: no polling cost --------------------------
-    "privacy": {
-        // Lights up when something is using the mic, camera, or capturing the
-        // screen — worth having on a machine that runs VMs and screenshares.
-        "icon-size": 14,
-        "transition-duration": 250,
-        "modules": [
-            { "type": "screenshare", "tooltip": true },
-            { "type": "audio-in", "tooltip": true }
-        ]
+    "mpris": {
+        // Event-driven over D-Bus — no polling cost for the text itself.
+        "format": "{artist} - {title}",
+        "format-paused": "{artist} - {title}",
+        "max-length": 42,
+        "tooltip-format": "{player} — {status}\n{artist}\n{title}\n{album}",
+        "on-click": "playerctl play-pause",
+        "on-click-right": "playerctl next",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
     },
 
+    // ---- right ----------------------------------------------------------
     "systemd-failed-units": {
-        // This rice runs ~10 systemd user services. Without this, a dead
-        // waybar/swaync/wallpaper unit is invisible until you notice the
-        // symptom and go looking. Now it just shows up.
+        // hide-on-ok means this renders nothing while everything is healthy,
+        // so it costs no space in the layout. This rice runs ~10 systemd user
+        // services and a dead one is otherwise invisible until you notice the
+        // symptom — which is exactly how the notification panel failed.
         "hide-on-ok": true,
         "format": "󰀦 {nr_failed}",
         "format-ok": "",
         "system": false,
-        "user": true
+        "user": true,
+        "on-click": "foot -e systemctl --user --failed"
     },
 
-    "idle_inhibitor": {
-        // One click to stop the screen locking — handy watching a VM install.
-        "format": "{icon}",
-        "format-icons": { "activated": "󰅶", "deactivated": "󰛊" },
-        "tooltip-format-activated": "Idle inhibited — screen will not lock",
-        "tooltip-format-deactivated": "Idle normal"
+    "cpu": {
+        "format": "󰻠 {usage}%",
+        "interval": 5,
+        "states": { "warning": 70, "critical": 90 },
+        "on-click": "foot -e btop"
+    },
+
+    "memory": {
+        "format": "󰍛 {percentage}%",
+        "tooltip-format": "{used:0.1f}G used / {total:0.1f}G ({percentage}%)\nswap: {swapUsed:0.1f}G",
+        "interval": 10,
+        "states": { "warning": 70, "critical": 90 },
+        "on-click": "foot -e btop"
+    },
+
+    "temperature": {
+        // __THERMAL_ZONE__ is resolved at deploy time by install.sh, which
+        // finds the CPU package sensor rather than trusting zone 0 (often
+        // acpitz/chassis on ThinkPads — plausible-looking but wrong).
+        "thermal-zone": __THERMAL_ZONE__,
+        "critical-threshold": 85,
+        "format": "{icon} {temperatureC}°C",
+        // Real glyphs. These were three EMPTY strings in every revision up to
+        // now, so the temperature module has always rendered without an icon
+        // while every neighbouring module had one.
+        "format-icons": ["", "", ""],
+        "interval": 10
+    },
+
+    "network#speed": {
+        "format": "󰇚 {bandwidthDownBytes}",
+        "format-disconnected": "󰤮 --",
+        "tooltip-format": "down {bandwidthDownBytes}   up {bandwidthUpBytes}",
+        "interval": 5
+    },
+
+    "disk": {
+        // Percentage on the face to match the rest of the island; the number
+        // that actually matters on 512 GB of qcow2 images — free headroom —
+        // is one hover away. Images grow silently until the disk is full.
+        "path": "/",
+        "format": "󰋊 {percentage_used}%",
+        "tooltip-format": "{used} used / {total} ({percentage_used}% full)\nfree: {free}",
+        "states": { "warning": 80, "critical": 92 },
+        "interval": 120
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 mute",
+        "format-icons": { "default": ["󰕿", "󰖀", "󰕾"] },
+        "on-click": "pavucontrol",
+        "on-click-right": "~/.config/rice/scripts/volume.sh mute"
+    },
+
+    "battery": {
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
+        "tooltip-format": "{capacity}% — {timeTo}\n{power:0.1f}W",
+        "states": { "warning": 25, "critical": 10 },
+        "interval": 60
     },
 
     "power-profiles-daemon": {
@@ -131,87 +220,12 @@
         }
     },
 
-    // ---- polled modules, at restrained intervals ------------------------
-    "custom/vms": {
-        // Running libvirt domain count. Forks a virsh client, so it polls at
-        // 30s rather than 15s; exec-if hides it when libvirt is unreachable.
-        "exec": "~/.config/rice/scripts/libvirt-status.sh",
-        "exec-if": "command -v virsh",
-        "return-type": "json",
-        "interval": 30,
-        "format": "󰢹 {}",
-        "on-click": "~/.config/rice/scripts/launch-or-focus.sh 4 '^(virt-manager|.*[Vv]irt-manager.*)$' virt-manager"
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": { "activated": "󰅶", "deactivated": "󰛊" },
+        "tooltip-format-activated": "Idle inhibited — screen will not lock",
+        "tooltip-format-deactivated": "Idle normal"
     },
-
-    "cpu": {
-        "format": "󰻠 {usage}%",
-        "interval": 5,
-        "states": { "warning": 70, "critical": 90 },
-        "on-click": "foot -e btop"
-    },
-
-    "memory": {
-        "format": "󰍛 {used:0.1f}G",
-        "tooltip-format": "{used:0.1f}G used / {total:0.1f}G ({percentage}%)\nswap: {swapUsed:0.1f}G",
-        "interval": 10,
-        "states": { "warning": 70, "critical": 90 },
-        "on-click": "foot -e btop"
-    },
-
-    "disk": {
-        // On 512 GB running qcow2 images, root headroom is the gauge that
-        // matters most — images grow silently until the filesystem is full.
-        "path": "/",
-        "format": "󰋊 {free}",
-        "tooltip-format": "{used} used / {total} ({percentage_used}% full)\nfree: {free}",
-        "states": { "warning": 80, "critical": 92 },
-        "interval": 120
-    },
-
-    "temperature": {
-        // __THERMAL_ZONE__ is resolved at deploy time by install.sh, which
-        // finds the CPU package sensor rather than trusting zone 0 (often
-        // acpitz/chassis on ThinkPads, plausible-looking but wrong).
-        "thermal-zone": __THERMAL_ZONE__,
-        "critical-threshold": 85,
-        "format": "{icon} {temperatureC}°C",
-        "format-icons": ["", "", ""],
-        "interval": 10
-    },
-
-    "network": {
-        "format-wifi": "{icon} {bandwidthDownBytes} 󰕒{bandwidthUpBytes}",
-        "format-ethernet": "󰈀 {bandwidthDownBytes} 󰕒{bandwidthUpBytes}",
-        "format-disconnected": "󰤮 offline",
-        "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
-        "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}/{cidr} via {gwaddr}",
-        "tooltip-format-ethernet": "{ifname}\n{ipaddr}/{cidr} via {gwaddr}",
-        "interval": 5,
-        "on-click": "foot -e nmtui"
-    },
-
-    "pulseaudio": {
-        "format": "{icon} {volume}%",
-        "format-muted": "󰝟 mute",
-        "format-icons": { "default": ["󰕿", "󰖀", "󰕾"] },
-        "on-click": "pavucontrol",
-        "on-click-right": "~/.config/rice/scripts/volume.sh mute"
-    },
-
-    "backlight": {
-        "format": "{icon} {percent}%",
-        "format-icons": ["󰃞", "󰃟", "󰃠"]
-    },
-
-    "battery": {
-        "format": "{icon} {capacity}%",
-        "format-charging": "󰂄 {capacity}%",
-        "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
-        "states": { "warning": 25, "critical": 10 },
-        "interval": 60
-    },
-
-    "tray": { "icon-size": 16, "spacing": 8 },
 
     "custom/osk": {
         // The one control that must be reachable by touch alone — a keybind
@@ -221,7 +235,25 @@
         "on-click": "~/.config/rice/scripts/osk.sh"
     },
 
+    "clock#date": {
+        "format": "󰃭 {:%a %b %d}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "format": { "today": "<b><u>{}</u></b>" }
+        }
+    },
+
+    "clock#time": {
+        "format": "󰥔 {:%H:%M}",
+        "tooltip": false
+    },
+
     "custom/notification": {
+        // The round button. Left-click opens the swaync panel, right-click
+        // the power menu — one control instead of spending two islands on
+        // two glyphs. The icon already reflects notification state, which is
+        // more use than a static hamburger.
         "exec": "swaync-client -swb",
         "return-type": "json",
         "escape": true,
@@ -236,13 +268,8 @@
             "dnd-inhibited-notification": "󰂛",
             "dnd-inhibited-none": "󰂛"
         },
-        "on-click": "swaync-client -t -sw",
+        "on-click": "~/.config/rice/scripts/notify-panel.sh",
+        "on-click-right": "~/.config/rice/scripts/powermenu.sh",
         "tooltip": false
-    },
-
-    "custom/power": {
-        "format": "󰐥",
-        "tooltip": false,
-        "on-click": "~/.config/rice/scripts/powermenu.sh"
     }
 }

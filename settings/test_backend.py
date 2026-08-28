@@ -150,5 +150,59 @@ class TestParsingHelpers(unittest.TestCase):
         self.assertIn("not installed", out)
 
 
+class TestSetWallpaper(unittest.TestCase):
+    """set_wallpaper shells out; pin the branch behaviour without a real
+    compositor, wallpaper daemon, or matugen."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.img = root / "pic.png"
+        self.img.write_bytes(b"\x89PNG\r\n")
+        self._orig = (b.RICE, b.SCRIPTS, b.has, b.run)
+        b.RICE = root / ".config" / "rice"
+        b.SCRIPTS = b.RICE / "scripts"
+        b.SCRIPTS.mkdir(parents=True)
+        (b.SCRIPTS / "theme-from-wallpaper.sh").write_text("#!/bin/sh\nexit 0\n")
+        self.calls = []
+        b.run = lambda cmd, timeout=10: (self.calls.append(cmd) or (0, ""))
+
+    def tearDown(self):
+        b.RICE, b.SCRIPTS, b.has, b.run = self._orig
+        self.tmp.cleanup()
+
+    def _ran_palette(self):
+        return any("theme-from-wallpaper.sh" in " ".join(c) for c in self.calls)
+
+    def test_missing_image_is_rejected_before_any_shell_out(self):
+        okd, out = b.set_wallpaper(self.img.parent / "nope.png")
+        self.assertFalse(okd)
+        self.assertEqual(self.calls, [])
+
+    def test_palette_is_rederived_when_matugen_present(self):
+        b.has = lambda binary: binary == "matugen"
+        okd, out = b.set_wallpaper(self.img)
+        self.assertTrue(okd)
+        self.assertTrue(self._ran_palette())
+
+    def test_palette_is_skipped_without_matugen(self):
+        b.has = lambda binary: False
+        okd, _ = b.set_wallpaper(self.img)
+        self.assertTrue(okd)
+        self.assertFalse(self._ran_palette())
+
+    def test_wallpaper_failure_short_circuits_palette(self):
+        b.has = lambda binary: binary == "matugen"
+
+        def fail_daemon(cmd, timeout=10):
+            self.calls.append(cmd)
+            return (1, "boom") if "wallpaper-daemon.service" in cmd else (0, "")
+
+        b.run = fail_daemon
+        okd, out = b.set_wallpaper(self.img)
+        self.assertFalse(okd)
+        self.assertFalse(self._ran_palette())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

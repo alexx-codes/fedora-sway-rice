@@ -298,8 +298,25 @@ deploy_configs() {
     # The rice dir: themes, scripts, keybinds source of truth, wallpapers
     mkdir -p "$cfg/rice"
     touch "$cfg/rice/.rice-managed"
+
+    # scripts/theme-from-wallpaper.sh writes a wallpaper-derived palette to
+    # this same theme/ dir at runtime, outside install.sh entirely. The
+    # deploy_tree call right below would silently overwrite it back to
+    # static Ashfall on the next reinstall — say so before it happens.
+    # colors.env is only ever READ by theme-gen.py, never written, so the
+    # deployed state can't be inspected from generated file contents; the
+    # marker file is the one place "currently wallpaper-derived" is recorded.
+    if [ -f "$cfg/rice/theme/.wallpaper-derived" ]; then
+        warn "current palette is wallpaper-derived — this reinstall reverts it to static Ashfall."
+        warn "  Re-run scripts/theme-from-wallpaper.sh afterward if you want it back."
+    fi
+
     deploy_tree "$repo/theme" "$cfg/rice/theme"
     deploy_tree "$repo/scripts" "$cfg/rice/scripts"
+    # matugen templates for the wallpaper-derived palette. config.toml points
+    # at ~/.config/rice/matugen/templates, so it must land here, not in
+    # ~/.config/matugen — the rice does not take over a shared matugen setup.
+    deploy_tree "$repo/matugen" "$cfg/rice/matugen"
     chmod +x "$cfg/rice/scripts/"*.sh "$cfg/rice/scripts/"*.py
     cp "$repo/keybinds.tsv" "$cfg/rice/keybinds.tsv"
     # verify.sh --fix runs from the deployed copy too, so it needs the manifest

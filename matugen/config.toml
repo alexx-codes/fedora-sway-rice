@@ -1,0 +1,16 @@
+# matugen — wallpaper-derived surfaces for the rice.
+#
+# Only ONE template: a small env file of surface/text/accent roles, which
+# scripts/theme-gen.py merges with theme/colors.env before generating any
+# app config. matugen deliberately does not write app files directly — that
+# would bypass the WCAG contrast gate, and matugen output is exactly where
+# contrast quietly slips.
+[config]
+
+# Paths carry __HOME__, not ~ — install.sh's deploy_tree substitutes the real
+# $HOME in at deploy time (repo convention: no ~ in deployed paths), and
+# theme-from-wallpaper.sh reads the palette back from the same literal
+# $HOME/.cache/rice path rather than through $XDG_CACHE_HOME.
+[templates.rice_palette]
+input_path = '__HOME__/.config/rice/matugen/templates/rice-palette.env'
+output_path = '__HOME__/.cache/rice/wallpaper-palette.env'

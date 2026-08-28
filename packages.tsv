@@ -35,6 +35,9 @@ polkit	base	-	Privilege prompts
 python3	base	python3	Runs the theme and keybind generators
 jq	base	jq	JSON parsing in launch-or-focus, screenshot, display-menu
 unzip	base	unzip	Extracts the Nerd Font archive
+ImageMagick	deps	magick	Circular album art (mpris-art.sh)
+curl	deps	curl	Album art fetch for http(s):// artUrl (mpris-art.sh)
+matugen	optional	matugen	Wallpaper-derived palette (theme-from-wallpaper.sh). NOT in Fedora repos — `cargo install matugen`. Optional tier so install.sh never tries dnf on it; the bar falls back to the static palette without it
 cargo	optional	cargo	Only needed if you build extras yourself (e.g. swww, which is NOT on crates.io — get it from its GitHub releases)
 
 # ── deps: invoked by the rice's own scripts and configs ───────────────────
@@ -44,7 +47,7 @@ pipewire-pulseaudio	deps	-	PulseAudio compatibility for pavucontrol
 brightnessctl	deps	brightnessctl	brightness.sh — also needs `video` group membership
 playerctl	deps	playerctl	Media play/pause/next/prev keys
 NetworkManager-tui	deps	nmtui	waybar network module on-click
-network-manager-applet	deps	nm-applet	Network tray icon
+network-manager-applet	optional	nm-applet	Network tray icon — currently unused, waybar's tray was dropped from the redesigned bar
 rfkill	deps	rfkill	Bluetooth toggle fallback (F10)
 bluez	deps	bluetoothctl	Bluetooth stack and toggle (F10)
 squeekboard	optional	squeekboard	On-screen keyboard. NOT packaged on Fedora 44+; only needed on a touch panel

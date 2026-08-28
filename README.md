@@ -28,7 +28,7 @@ that keeps git the single source of truth and every change diffable.
 |------|------|-----|
 | Compositor | sway + sway-systemd | systemd session target supervises everything (the old runit-style rice died from ad-hoc `exec_always` supervision) |
 | Terminal | foot | Wayland-native, GPU-accelerated, tiny |
-| Bar | Waybar | workspaces, clock, tray + prominent CPU/RAM/temp/net for VM load, running-VM count |
+| Bar | Waybar | workspaces, clock, album art + prominent CPU/RAM/temp/net for VM load, running-VM count (no tray — see HANDOFF.md) |
 | Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — IPC-driven, rofi fallbacks |
 | Launcher | rofi-wayland | official repo; also the dmenu backend for the clipboard, power menu and cheatsheet fallbacks |
 | Notifications | SwayNotificationCenter | daemon + control center in one official package (chosen over mako for the panel) |
@@ -63,8 +63,29 @@ theme/colors.env  ->  scripts/theme-gen.py  ->  theme/{foot.ini, colors.css,
 ```
 
 To change a color: edit `theme/colors.env`, run `./scripts/theme-gen.py`, then
-`./install.sh --configs-only`. There is no dark/light toggle, no active-theme
-symlink and no matugen — all removed as complexity that earned nothing.
+`./install.sh --configs-only`. There is no dark/light toggle and no active-theme
+symlink — both removed as complexity that earned nothing.
+
+**matugen is back, for surfaces only.** `scripts/theme-from-wallpaper.sh` derives
+the surface, text and accent roles from the current wallpaper and merges them onto
+`colors.env`:
+
+```
+wallpaper ──matugen──> BG/BG_ALT/FG/ACCENT/…  ─┐
+                                               ├──> theme-gen.py ──> theme/*
+theme/colors.env ── RED/GREEN/ORANGE + ANSI ──┘      (WCAG gate)
+```
+
+The split is the point. Semantic colors and the ANSI block are NOT wallpaper-
+derived: a critical-battery badge that turns wallpaper-brown is decoration
+rather than a warning, and re-hueing ANSI per wallpaper makes every language
+look wrong in foot. The contrast gate still runs on the merged result — it just
+nudges a failing color until it clears instead of aborting, because a wallpaper
+change must never leave you with an unreadable bar.
+
+matugen is `optional` in `packages.tsv` (it is not in the Fedora repos —
+`cargo install matugen`). Without it the static Ashfall palette is used and
+nothing breaks.
 
 ## Keybinds
 

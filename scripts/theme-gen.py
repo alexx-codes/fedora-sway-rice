@@ -11,6 +11,25 @@ and a deliberately grim palette (near-black surfaces, desaturated accents) is
 exactly the case where contrast quietly slips.
 
     ./scripts/theme-gen.py        # regenerate after editing colors.env
+    ./scripts/theme-gen.py --from-wallpaper <palette.env> [--out <dir>]
+
+--from-wallpaper overlays matugen's wallpaper-derived SURFACE, TEXT and ACCENT
+roles onto colors.env and regenerates everything from the merged result. The
+semantic colors (RED/ORANGE/GREEN/...) and the ANSI block are NOT overlaid:
+they carry meaning and drive syntax highlighting, and re-hueing them per
+wallpaper makes a critical-battery badge decorative and every language look
+wrong.
+
+The contrast gate still runs on the merged palette — matugen output is exactly
+where contrast slips. The one difference is that it NUDGES a failing color
+toward the background's opposite until it clears, instead of aborting. A
+static palette that fails is an editing mistake worth stopping for; a
+wallpaper that fails must never leave you with an unreadable bar.
+
+--out writes elsewhere than theme/. Deployed, theme/ resolves to
+~/.config/rice/theme and writing there is exactly right; run from a git
+checkout it would commit wallpaper colors over the authored palette, so the
+preview harness points --out at a scratch dir instead.
 """
 import json
 import sys
@@ -55,24 +74,73 @@ def contrast(a: str, b: str) -> float:
     return (hi + 0.05) / (lo + 0.05)
 
 
-def check_contrast(t: dict) -> None:
-    problems = []
-    fg_bg = contrast(t["FG"], t["BG"])
-    if fg_bg < FG_FLOOR:
-        problems.append(f"FG on BG is {fg_bg:.1f}:1 (need >= {FG_FLOOR}:1 for body text)")
+# Keys the wallpaper may drive. Everything else stays as authored.
+WALLPAPER_KEYS = ("BG", "BG_ALT", "BG_HL", "BG_SEL", "BORDER",
+                  "FG", "FG_DIM", "MUTED", "ACCENT", "ACCENT2")
+
+
+def blend(a: str, b: str, f: float) -> str:
+    return "".join(f"{round(int(a[i:i+2], 16) * (1 - f) + int(b[i:i+2], 16) * f):02x}"
+                   for i in (0, 2, 4))
+
+
+def nudge(col: str, bg: str, floor: float) -> str:
+    """Walk col toward the background's opposite until it clears floor."""
+    if contrast(col, bg) >= floor:
+        return col
+    target = "ffffff" if luminance(bg) < 0.5 else "000000"
+    for step in range(1, 41):
+        c = blend(col, target, step / 40)
+        if contrast(c, bg) >= floor:
+            return c
+    return target
+
+
+def checked_pairs(t: dict):
+    """(key, floor) for every color the gate covers. One definition, used by
+    both the strict path and the nudging path so they can never disagree."""
+    yield "FG", FG_FLOOR
     for name in ("FG_DIM", "ACCENT", "ACCENT2", "PINK", "RED", "GREEN",
                  "YELLOW", "CYAN", "TEAL", "ORANGE"):
-        c = contrast(t[name], t["BG"])
-        if c < ACCENT_FLOOR:
-            problems.append(f"{name} on BG is {c:.1f}:1 (need >= {ACCENT_FLOOR}:1)")
+        yield name, ACCENT_FLOOR
     for i in range(1, 16):
         if i == 8:  # bright black is the comment color; allowed to be dim
             continue
-        c = contrast(t[f"ANSI{i}"], t["BG"])
-        if c < ACCENT_FLOOR:
-            problems.append(f"ANSI{i} on BG is {c:.1f}:1 (need >= {ACCENT_FLOOR}:1)")
+        yield f"ANSI{i}", ACCENT_FLOOR
+
+
+def relax_contrast(t: dict) -> None:
+    """Nudge rather than abort. Used for wallpaper-derived palettes."""
+    fixed = []
+    for name, floor in checked_pairs(t):
+        before = t[name]
+        after = nudge(before, t["BG"], floor)
+        if after != before:
+            t[name] = after
+            fixed.append(f"{name} {before} -> {after} "
+                         f"({contrast(before, t['BG']):.1f} -> "
+                         f"{contrast(after, t['BG']):.1f}:1)")
+    if fixed:
+        print(f"contrast: nudged {len(fixed)} color(s) to clear the floor:")
+        for line in fixed:
+            print(f"  {line}")
+    else:
+        print("contrast ok: nothing needed nudging")
+
+
+def check_contrast(t: dict) -> None:
+    # Iterates the same checked_pairs() the nudging path uses below, rather
+    # than keeping a second hardcoded copy of the color list — the two paths
+    # covering different colors was a real risk, not a hypothetical one.
+    problems = []
+    for name, floor in checked_pairs(t):
+        c = contrast(t[name], t["BG"])
+        if c < floor:
+            label = "for body text" if name == "FG" else ""
+            problems.append(f"{name} on BG is {c:.1f}:1 (need >= {floor}:1{' ' + label if label else ''})")
     if problems:
         sys.exit("contrast check FAILED — nothing generated:\n  " + "\n  ".join(problems))
+    fg_bg = contrast(t["FG"], t["BG"])
     print(f"contrast ok: FG/BG {fg_bg:.1f}:1, every accent and ANSI color "
           f">= {ACCENT_FLOOR}:1")
 
@@ -102,6 +170,11 @@ def gen_css(t):
     lines = ["/* GENERATED from theme/colors.env by scripts/theme-gen.py */"]
     for css, key in CSS_TOKENS:
         lines.append(f"@define-color {css} #{t[key]};")
+    # The waybar islands float over the wallpaper, so their fill is a
+    # translucent surface rather than a flat one. Derived here so both the
+    # static and wallpaper palettes get it for free.
+    r, g, b = (int(t["BG_ALT"][i:i + 2], 16) for i in (0, 2, 4))
+    lines.append(f"@define-color pill rgba({r}, {g}, {b}, 0.82);")
     return "\n".join(lines) + "\n"
 
 
@@ -266,7 +339,37 @@ def main():
     if not SRC.is_file():
         sys.exit(f"missing {SRC.relative_to(REPO)}")
     t = parse_env(SRC)
-    check_contrast(t)
+
+    args = sys.argv[1:]
+    wallpaper_src = None
+    out_dir = THEME
+    if "--out" in args:
+        i = args.index("--out")
+        if i + 1 >= len(args):
+            sys.exit("--out needs a directory")
+        out_dir = Path(args[i + 1])
+        del args[i:i + 2]
+    if args and args[0] == "--from-wallpaper":
+        if len(args) != 2:
+            sys.exit("usage: theme-gen.py --from-wallpaper <palette.env> [--out <dir>]")
+        wallpaper_src = Path(args[1])
+        if not wallpaper_src.is_file():
+            sys.exit(f"missing wallpaper palette: {wallpaper_src}")
+    elif args:
+        sys.exit(f"unknown argument: {args[0]}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if wallpaper_src:
+        derived = parse_env(wallpaper_src)
+        missing = [k for k in WALLPAPER_KEYS if k not in derived]
+        if missing:
+            sys.exit(f"{wallpaper_src}: missing keys: {', '.join(missing)}")
+        for k in WALLPAPER_KEYS:
+            t[k] = derived[k].lstrip("#").lower()
+        t["NAME"] = f"{t.get('NAME', 'Ashfall')} (wallpaper)"
+        relax_contrast(t)
+    else:
+        check_contrast(t)
     outputs = {
         "foot.ini": gen_foot(t),
         "colors.css": gen_css(t),
@@ -277,8 +380,19 @@ def main():
         "qt6ct-colors.conf": gen_qt6ct(t),
     }
     for name, body in outputs.items():
-        (THEME / name).write_text(body)
-    print(f"generated {len(outputs)} files in theme/ for '{t.get('NAME', '?')}'")
+        (out_dir / name).write_text(body)
+
+    # A sentinel, not a parse of the generated output: colors.env is only
+    # ever READ by this script, never written, so install.sh cannot detect
+    # "currently wallpaper-derived" by inspecting anything theme-gen.py
+    # produces. The marker is the one place that state actually lives.
+    marker = out_dir / ".wallpaper-derived"
+    if wallpaper_src:
+        marker.write_text(f"derived from {wallpaper_src}\n")
+    elif marker.exists():
+        marker.unlink()
+
+    print(f"generated {len(outputs)} files in {out_dir} for '{t.get('NAME', '?')}'")
 
 
 if __name__ == "__main__":

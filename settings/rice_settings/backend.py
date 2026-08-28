@@ -182,7 +182,14 @@ def list_wallpapers() -> list[Path]:
 
 
 def set_wallpaper(path: Path) -> tuple[bool, str]:
-    """Apply a wallpaper. The palette is fixed and does not follow the image."""
+    """Apply a wallpaper, then re-derive the wallpaper-tracked palette roles.
+
+    The surface/text/accent roles follow the image via theme-from-wallpaper.sh;
+    the semantic colors and the ANSI block stay pinned in theme/colors.env. That
+    step is a plain synchronous script call on a discrete event — not a watcher
+    or a systemd unit, which is the class of thing that broke this rice once.
+    Without matugen installed it is a no-op and the static palette stands.
+    """
     path = Path(path)
     if not path.is_file():
         return False, f"no such image: {path}"
@@ -198,9 +205,17 @@ def set_wallpaper(path: Path) -> tuple[bool, str]:
 
     if has("swww") and run(["swww", "query"])[0] == 0:
         rc, out = run(["swww", "img", str(path), "--resize", "crop"], timeout=20)
-        return rc == 0, out
-    rc, out = run(["systemctl", "--user", "restart", "wallpaper-daemon.service"])
-    return rc == 0, out
+    else:
+        rc, out = run(["systemctl", "--user", "restart", "wallpaper-daemon.service"])
+    if rc != 0:
+        return False, out
+
+    script = SCRIPTS / "theme-from-wallpaper.sh"
+    if has("matugen") and script.is_file():
+        prc, pout = run(["bash", str(script), str(path)], timeout=60)
+        if prc != 0:
+            return True, f"note: palette not re-derived from wallpaper — {pout}"
+    return True, ""
 
 
 # ---------------------------------------------------------------- display

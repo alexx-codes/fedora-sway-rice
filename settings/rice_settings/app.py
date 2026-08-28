@@ -73,8 +73,12 @@ class WallpaperPage(Adw.PreferencesPage):
 
     def _apply(self, _btn, path):
         okd, out = b.set_wallpaper(path)
-        toast(self, f"Wallpaper set to {path.name}" if okd
-              else f"Could not set wallpaper: {out}")
+        if not okd:
+            toast(self, f"Could not set wallpaper: {out}")
+        elif out.startswith("note:"):
+            toast(self, f"Wallpaper set to {path.name} ({out[5:].strip()})")
+        else:
+            toast(self, f"Wallpaper set to {path.name}")
 
 
 # ---------------------------------------------------------------- Display

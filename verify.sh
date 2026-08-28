@@ -148,6 +148,31 @@ else
     warn "keybinds.conf not found — run ./install.sh --configs-only"
 fi
 
+# The check above deliberately skips ~/ and / targets, which means it never
+# looked at the rice's OWN scripts — the majority of what the keys actually
+# call. A bind pointing at a script that isn't there fails exactly the way a
+# missing binary does: nothing happens, no message. Close that gap too.
+if [ -f "$_kb" ]; then
+    _broken_scripts=0
+    while read -r target; do
+        case "$target" in \~/.config/rice/scripts/*) ;; *) continue ;; esac
+        _name="${target##*/}"
+        _path="$HOME/.config/rice/scripts/$_name"
+        [ -f "$_path" ] || _path="$RICE_REPO/scripts/$_name"
+        if [ ! -f "$_path" ]; then
+            fail "key binding calls '$_name' — no such script"
+            _broken_scripts=$((_broken_scripts + 1))
+        elif [ ! -x "$_path" ]; then
+            fail "key binding calls '$_name' — present but not executable"
+            _broken_scripts=$((_broken_scripts + 1))
+        fi
+    done < <(awk '/^bindsym|^bindswitch|^bindgesture/ {
+                    for (i = 1; i <= NF; i++)
+                        if ($i == "exec") { print $(i+1); break }
+                  }' "$_kb" | sed 's/^"//')
+    [ "$_broken_scripts" -eq 0 ] && pass "every key binding's rice script exists and is executable"
+fi
+
 sect "Waybar module support"
 if command -v waybar >/dev/null 2>&1; then
     _wv=$(waybar --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
@@ -165,10 +190,36 @@ if command -v waybar >/dev/null 2>&1; then
     else
         warn "could not read the waybar version"
     fi
+
+    # mpris is a meson BUILD OPTION, not something a version number proves —
+    # confirmed by checking two different waybar 0.15.0 builds: one links
+    # libplayerctl, a distro could ship one that doesn't. A version-only gate
+    # would report a bar that passes verify.sh but has a permanently empty
+    # media island the moment a player starts.
+    if command -v playerctl >/dev/null 2>&1; then
+        if ldd "$(command -v waybar)" 2>/dev/null | grep -q libplayerctl; then
+            pass "waybar built with mpris support"
+        else
+            warn "waybar has no libplayerctl linkage — the mpris/media island"
+            warn "  will stay empty even with a player running"
+        fi
+    fi
+
     if [ -f "$HOME/.config/waybar/config.jsonc" ]; then
         systemctl --user is-active waybar.service >/dev/null 2>&1 \
             && pass "waybar running" \
             || warn "waybar not running (journalctl --user -u waybar -e)"
+    fi
+
+    # A hand-edited theme.css missing @pill doesn't fail waybar — it just
+    # ships islands with no background, which is invisible until you look.
+    if [ -f "$HOME/.config/waybar/theme.css" ]; then
+        if grep -q '@define-color pill' "$HOME/.config/waybar/theme.css"; then
+            pass "waybar theme.css defines @pill"
+        else
+            warn "waybar theme.css has no @pill — islands will render with no background"
+            warn "  Run ./scripts/theme-gen.py"
+        fi
     fi
 else
     fail "waybar not installed"

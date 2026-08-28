@@ -21,13 +21,19 @@ notify_fail() {
         || printf 'rice-key: %s: %s\n' "$title" "$body" >&2
 }
 
-# require_cmd <binary> [package] — abort with a visible, actionable message
-# naming the package to install, rather than dying silently.
+# require_cmd <binary> [package] [install-hint] — abort with a visible,
+# actionable message naming how to install it, rather than dying silently.
+#
+# The default hint assumes dnf, which is right for everything in
+# packages.tsv's base/deps/hardware/integration tiers — but wrong for a tool
+# like matugen that packages.tsv itself marks as cargo-only (optional tier,
+# not in the Fedora repos). Pass a 3rd argument to override the hint verbatim
+# for those cases instead of pointing the user at a dnf install that fails.
 require_cmd() {
-    local bin="$1" pkg="${2:-$1}"
+    local bin="$1" pkg="${2:-$1}" hint="${3:-}"
     if ! command -v "$bin" >/dev/null 2>&1; then
         notify_fail "Key action failed: $bin not installed" \
-            "Install it with: sudo dnf install $pkg  (or run ./verify.sh --fix)"
+            "${hint:-Install it with: sudo dnf install $pkg  (or run ./verify.sh --fix)}"
         exit 127
     fi
 }
