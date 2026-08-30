@@ -2,7 +2,7 @@
 # Repo layout:
 #   config      - this file: session basics, includes, hardware inputs
 #   keybinds.conf   - GENERATED from keybinds.tsv (repo root); do not hand-edit
-#   workspaces.conf - workspace names, switching binds, app assignments
+#   workspaces.conf - workspace number definitions ($ws1..$ws10)
 #   windowrules.conf- floating/placement rules (virt-manager, dialogs, ...)
 #   ~/.config/rice/theme/sway-colors.conf - GENERATED colors (one palette)
 #

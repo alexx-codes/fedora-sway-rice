@@ -189,9 +189,12 @@ def gen_css(t):
 
 
 def gen_sway(t):
-    # The trailing `output * bg` is a solid-colour floor: without it there is a
-    # bare-compositor flash before the wallpaper daemon (swaybg) paints, and no
-    # fallback at all if swaybg never comes up.
+    # No `output * bg` here on purpose. `output * bg <c> solid_color` makes sway
+    # spawn its own `swaybg -c <c>`, an opaque surface that hides the photo drawn
+    # by wallpaper-daemon.service's swaybg — and every theme-from-wallpaper run
+    # regenerates it with the new BG and `swaymsg reload`s it back on top. The
+    # daemon (Restart=on-failure, plus its own `swaybg -c` last resort) is the
+    # single owner of the background.
     return "\n".join([
         "# GENERATED from theme/colors.env by scripts/theme-gen.py",
         "# border | background | text | indicator | child_border",
@@ -199,7 +202,6 @@ def gen_sway(t):
         f"client.focused_inactive #{t['BORDER']} #{t['BG_ALT']} #{t['FG_DIM']} #{t['BORDER']} #{t['BORDER']}",
         f"client.unfocused        #{t['BORDER']} #{t['BG_ALT']} #{t['MUTED']} #{t['BORDER']} #{t['BORDER']}",
         f"client.urgent           #{t['RED']} #{t['RED']} #{t['BG']} #{t['RED']} #{t['RED']}",
-        f"output * bg #{t['BG']} solid_color",
     ]) + "\n"
 
 

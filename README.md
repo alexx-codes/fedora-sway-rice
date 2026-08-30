@@ -112,7 +112,7 @@ it isn't running.
 - VS Code runs native Wayland via `ELECTRON_OZONE_PLATFORM_HINT=auto`
   (environment.d) **and** an overridden `code.desktop` with explicit ozone
   flags; `verify.sh` confirms a running window is Wayland-native, not XWayland.
-- virt-manager: consoles tile on workspace 4; its dialogs float
+- virt-manager: consoles tile on the current workspace; its dialogs float
   (`config/sway/windowrules.conf`).
 
 ## Troubleshooting
