@@ -7,7 +7,7 @@ configuration {
     font:                "JetBrainsMono Nerd Font 12";
     show-icons:          true;
     icon-theme:          "Papirus";
-    terminal:            "foot";
+    terminal:            "kitty";
     drun-display-format: "{name}";
     display-drun:        "";
     display-run:         "";
@@ -26,7 +26,7 @@ configuration {
     accent2:     #a8899a;
     pink:        #bd8298;
     urgent-col:  #c96a60;
-    border-col:  #272c34;
+    border-col:  #4a515c;
 
     background-color: transparent;
     text-color:       @fg;

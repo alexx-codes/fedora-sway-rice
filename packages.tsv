@@ -23,7 +23,7 @@ sway-systemd	base	-	Provides sway-session.target; the supervision backbone
 swaybg	base	swaybg	Draws the wallpaper (swww only if you opt in)
 swayidle	base	swayidle	Idle/lock/suspend management
 swaylock	base	swaylock	Screen lock
-foot	base	foot	Terminal (Wayland-native, GPU-accelerated)
+kitty	base	kitty	Terminal (GPU-accelerated, ligature-capable)
 waybar	base	waybar	Status bar
 rofi-wayland	base	rofi	Launcher and dmenu backend for every picker
 SwayNotificationCenter	base	swaync	Notification daemon + control center
@@ -55,6 +55,7 @@ pavucontrol	deps	pavucontrol	waybar audio module on-click
 btop	deps	btop	waybar CPU/memory module on-click
 usbutils	deps	lsusb	fingerprint-setup.sh device identification
 xdg-user-dirs	deps	xdg-user-dir	Creates ~/Pictures so screenshots have somewhere to go
+pipx	deps	pipx	Installs autotiling — autotiling itself is not in the Fedora repos, but pipx is, and install.sh uses it to fetch autotiling into ~/.local/bin
 fontawesome4-fonts|fontawesome-fonts	deps	-	Icon glyph fallback (renamed between Fedora releases)
 google-noto-color-emoji-fonts	deps	-	Emoji rendering
 

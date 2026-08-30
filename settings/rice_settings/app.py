@@ -10,6 +10,8 @@ display. This module is presentation only.
 """
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -31,6 +33,21 @@ def toast(page: Adw.PreferencesPage, text: str) -> None:
 class WallpaperPage(Adw.PreferencesPage):
     def __init__(self):
         super().__init__(title="Wallpaper", icon_name="image-x-generic-symbolic")
+
+        # Added before the wallpaper grid on purpose: the "no wallpapers found"
+        # branch below returns early, and a group added after it would never
+        # appear on exactly the machine that most needs a manual regen.
+        g0 = Adw.PreferencesGroup()
+        row = Adw.ActionRow(
+            title="Regenerate theme from wallpaper",
+            subtitle="Re-derives surfaces, text and accents from the current "
+                     "wallpaper, then reloads sway")
+        btn = Gtk.Button(label="Regenerate", valign=Gtk.Align.CENTER)
+        btn.connect("clicked", self._regen)
+        row.add_suffix(btn)
+        row.set_activatable_widget(btn)
+        g0.add(row)
+        self.add(g0)
 
         d = b.wallpaper_dir()
         g = Adw.PreferencesGroup(title="Wallpapers", description=f"From {d}")
@@ -71,14 +88,52 @@ class WallpaperPage(Adw.PreferencesPage):
         btn.connect("clicked", self._apply, path)
         return btn
 
-    def _apply(self, _btn, path):
-        okd, out = b.set_wallpaper(path)
-        if not okd:
-            toast(self, f"Could not set wallpaper: {out}")
-        elif out.startswith("note:"):
-            toast(self, f"Wallpaper set to {path.name} ({out[5:].strip()})")
-        else:
-            toast(self, f"Wallpaper set to {path.name}")
+    # regen_theme_from_wallpaper() / set_wallpaper() shell out to
+    # theme-from-wallpaper.sh (matugen + theme-gen + `swaymsg reload`) with a
+    # 60 s timeout. Run on the GTK thread that would freeze the whole window,
+    # so both go through a worker thread and report back via GLib.idle_add.
+    def _run_bg(self, btn, busy_label, work, message):
+        if self._bg_busy:
+            return
+        self._bg_busy = True
+        btn.set_sensitive(False)
+        restore = btn.get_label() if busy_label is not None else None
+        if restore is not None:
+            btn.set_label(busy_label)
+
+        def finish(result):
+            self._bg_busy = False
+            btn.set_sensitive(True)
+            if restore is not None:
+                btn.set_label(restore)
+            toast(self, message(*result))
+            return False
+
+        def worker():
+            try:
+                result = work()
+            except Exception as exc:  # never lose the UI to a worker crash
+                result = (False, str(exc))
+            GLib.idle_add(finish, result)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    _bg_busy = False
+
+    def _regen(self, btn):
+        self._run_bg(
+            btn, "Regenerating…", b.regen_theme_from_wallpaper,
+            lambda okd, out: "Theme regenerated from wallpaper" if okd
+            else f"Could not regenerate theme: {out}")
+
+    def _apply(self, btn, path):
+        def message(okd, out):
+            if not okd:
+                return f"Could not set wallpaper: {out}"
+            if out.startswith("note:"):
+                return f"Wallpaper set to {path.name} ({out[5:].strip()})"
+            return f"Wallpaper set to {path.name}"
+        self._run_bg(btn, None, lambda: b.set_wallpaper(path), message)
 
 
 # ---------------------------------------------------------------- Display

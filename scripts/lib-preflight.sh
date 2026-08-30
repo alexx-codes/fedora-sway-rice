@@ -193,7 +193,7 @@ repair_auto() {
 
     # Generated theme files — regenerate rather than hand-repair
     local f incomplete=0
-    for f in colors.env foot.ini colors.css sway-colors.conf rofi.rasi \
+    for f in colors.env kitty.conf colors.css sway-colors.conf rofi.rasi \
              swaylock.conf quickshell.json qt6ct-colors.conf; do
         [ -f "$HOME/.config/rice/theme/$f" ] || incomplete=1
     done
@@ -220,7 +220,7 @@ repair_auto() {
 
     # Installed-but-disabled user services
     local u
-    for u in waybar swaync swayidle quickshell wallpaper-daemon polkit-agent \
+    for u in waybar swaync swayidle quickshell autotiling wallpaper-daemon polkit-agent \
              cliphist-text cliphist-image squeekboard; do
         [ -f "$HOME/.config/systemd/user/$u.service" ] || continue
         if ! systemctl --user is-enabled "$u.service" >/dev/null 2>&1; then

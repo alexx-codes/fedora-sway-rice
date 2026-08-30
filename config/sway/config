@@ -12,7 +12,7 @@
 # `systemctl --user status <unit>` always tells you what's wrong.
 
 set $mod Mod4
-set $term foot
+set $term kitty
 
 font pango:JetBrainsMono Nerd Font 10.5
 
@@ -34,8 +34,8 @@ include ~/.config/rice/theme/sway-colors.conf
 
 default_border pixel 2
 default_floating_border pixel 2
-gaps inner 6
-gaps outer 2
+gaps inner 12
+gaps outer 6
 smart_gaps on
 smart_borders on
 titlebar_padding 6 3

@@ -204,5 +204,54 @@ class TestSetWallpaper(unittest.TestCase):
         self.assertFalse(self._ran_palette())
 
 
+class TestRegenThemeFromWallpaper(unittest.TestCase):
+    """The settings-app button runs the same script set_wallpaper() does, but
+    with no image argument — the script defaults to the `current` symlink."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self._orig = (b.RICE, b.SCRIPTS, b.has, b.run)
+        b.RICE = root / ".config" / "rice"
+        b.SCRIPTS = b.RICE / "scripts"
+        b.SCRIPTS.mkdir(parents=True)
+        self.script = b.SCRIPTS / "theme-from-wallpaper.sh"
+        self.script.write_text("#!/bin/sh\nexit 0\n")
+        self.calls = []
+        b.run = lambda cmd, timeout=10: (self.calls.append(cmd) or (0, ""))
+
+    def tearDown(self):
+        b.RICE, b.SCRIPTS, b.has, b.run = self._orig
+        self.tmp.cleanup()
+
+    def test_runs_the_script_with_no_wallpaper_argument(self):
+        b.has = lambda binary: binary == "matugen"
+        okd, _ = b.regen_theme_from_wallpaper()
+        self.assertTrue(okd)
+        self.assertEqual(self.calls, [["bash", str(self.script)]])
+
+    def test_missing_matugen_fails_before_any_shell_out(self):
+        b.has = lambda binary: False
+        okd, out = b.regen_theme_from_wallpaper()
+        self.assertFalse(okd)
+        self.assertIn("matugen", out)
+        self.assertEqual(self.calls, [])
+
+    def test_missing_script_fails_before_any_shell_out(self):
+        b.has = lambda binary: binary == "matugen"
+        self.script.unlink()
+        okd, out = b.regen_theme_from_wallpaper()
+        self.assertFalse(okd)
+        self.assertIn("theme-from-wallpaper.sh", out)
+        self.assertEqual(self.calls, [])
+
+    def test_script_failure_is_reported(self):
+        b.has = lambda binary: binary == "matugen"
+        b.run = lambda cmd, timeout=10: (self.calls.append(cmd) or (1, "boom"))
+        okd, out = b.regen_theme_from_wallpaper()
+        self.assertFalse(okd)
+        self.assertEqual(out, "boom")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -218,6 +218,24 @@ def set_wallpaper(path: Path) -> tuple[bool, str]:
     return True, ""
 
 
+def regen_theme_from_wallpaper() -> tuple[bool, str]:
+    """Re-derive the palette from the wallpaper that is already applied.
+
+    The same script set_wallpaper() calls after applying an image, exposed on
+    its own for when the image has not changed but the palette needs rebuilding
+    — notably after ./install.sh --configs-only, which reverts to static Ashfall.
+    No path argument: the script defaults to ~/.config/rice/wallpapers/current,
+    which is exactly the wallpaper in force.
+    """
+    script = SCRIPTS / "theme-from-wallpaper.sh"
+    if not has("matugen"):
+        return False, "matugen is not installed (cargo install matugen)"
+    if not script.is_file():
+        return False, f"missing {script}"
+    rc, out = run(["bash", str(script)], timeout=60)
+    return rc == 0, out
+
+
 # ---------------------------------------------------------------- display
 def outputs() -> list[dict]:
     rc, out = run(["swaymsg", "-t", "get_outputs", "-r"])

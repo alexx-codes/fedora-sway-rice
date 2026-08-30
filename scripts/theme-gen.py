@@ -46,6 +46,10 @@ LOCK_IMAGE = "__HOME__/.config/rice/wallpapers/current-lock"
 # Text must clear this against the background.
 FG_FLOOR = 7.0      # terminal body text
 ACCENT_FLOOR = 3.0  # anything else carrying text
+# The window border carries no text, so it needs less — but a wallpaper-derived
+# BORDER still has to stay visibly distinct from BG. At ~1.4:1 the unfocused
+# border vanished; the authored BORDER (= ANSI8) sits at ~2.4:1.
+BORDER_FLOOR = 2.2
 
 
 def parse_env(path: Path) -> dict:
@@ -103,6 +107,10 @@ def checked_pairs(t: dict):
     for name in ("FG_DIM", "ACCENT", "ACCENT2", "PINK", "RED", "GREEN",
                  "YELLOW", "CYAN", "TEAL", "ORANGE"):
         yield name, ACCENT_FLOOR
+    # BORDER is wallpaper-driven (matugen's outline_variant) but never
+    # contrast-checked otherwise, so a low-contrast wallpaper used to push the
+    # unfocused border back to invisible.
+    yield "BORDER", BORDER_FLOOR
     for i in range(1, 16):
         if i == 8:  # bright black is the comment color; allowed to be dim
             continue
@@ -145,15 +153,17 @@ def check_contrast(t: dict) -> None:
           f">= {ACCENT_FLOOR}:1")
 
 
-def gen_foot(t):
-    lines = ["# GENERATED from theme/colors.env by scripts/theme-gen.py", "[colors]",
-             f"foreground={t['FG']}", f"background={t['BG']}",
-             f"selection-foreground={t['FG']}", f"selection-background={t['BG_SEL']}",
-             f"urls={t['CYAN']}"]
-    for i in range(8):
-        lines.append(f"regular{i}={t[f'ANSI{i}']}")
-    for i in range(8):
-        lines.append(f"bright{i}={t[f'ANSI{i + 8}']}")
+def gen_kitty(t):
+    # kitty.conf is "key value", not foot's ini sections, and every color needs
+    # a leading "#" where foot took bare hex. regular0-7/bright0-7 collapse into
+    # one color0-15 run. Same set of roles as before, nothing added.
+    lines = ["# GENERATED from theme/colors.env by scripts/theme-gen.py",
+             f"foreground #{t['FG']}", f"background #{t['BG']}",
+             f"selection_foreground #{t['FG']}",
+             f"selection_background #{t['BG_SEL']}",
+             f"url_color #{t['CYAN']}"]
+    for i in range(16):
+        lines.append(f"color{i} #{t[f'ANSI{i}']}")
     return "\n".join(lines) + "\n"
 
 
@@ -179,6 +189,9 @@ def gen_css(t):
 
 
 def gen_sway(t):
+    # The trailing `output * bg` is a solid-colour floor: without it there is a
+    # bare-compositor flash before the wallpaper daemon (swaybg) paints, and no
+    # fallback at all if swaybg never comes up.
     return "\n".join([
         "# GENERATED from theme/colors.env by scripts/theme-gen.py",
         "# border | background | text | indicator | child_border",
@@ -200,7 +213,7 @@ configuration {
     font:                "JetBrainsMono Nerd Font 12";
     show-icons:          true;
     icon-theme:          "Papirus";
-    terminal:            "foot";
+    terminal:            "kitty";
     drun-display-format: "{name}";
     display-drun:        "";
     display-run:         "";
@@ -371,7 +384,7 @@ def main():
     else:
         check_contrast(t)
     outputs = {
-        "foot.ini": gen_foot(t),
+        "kitty.conf": gen_kitty(t),
         "colors.css": gen_css(t),
         "sway-colors.conf": gen_sway(t),
         "rofi.rasi": gen_rofi(t),

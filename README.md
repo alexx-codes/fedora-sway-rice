@@ -27,13 +27,14 @@ that keeps git the single source of truth and every change diffable.
 | Role | Tool | Why |
 |------|------|-----|
 | Compositor | sway + sway-systemd | systemd session target supervises everything (the old runit-style rice died from ad-hoc `exec_always` supervision) |
-| Terminal | foot | Wayland-native, GPU-accelerated, tiny |
+| Terminal | kitty | GPU-accelerated, ligature-capable |
 | Bar | Waybar | workspaces, clock, album art + prominent CPU/RAM/temp/net for VM load, running-VM count (no tray — see HANDOFF.md) |
 | Widgets | Quickshell (COPR) | power menu, volume/brightness OSD, keybind popup — IPC-driven, rofi fallbacks |
 | Launcher | rofi-wayland | official repo; also the dmenu backend for the clipboard, power menu and cheatsheet fallbacks |
 | Notifications | SwayNotificationCenter | daemon + control center in one official package (chosen over mako for the panel) |
 | Lock | swaylock | plain swaylock over swaylock-effects: the fork only lives in stale personal COPRs |
 | Idle | swayidle | lock 10 min, screen off 15 min, lock-before-sleep |
+| Tiling | autotiling (pipx) | alternates the split direction by window shape; a systemd user unit, not an `exec_always` |
 | Wallpaper | swaybg (swww optional) | static; no animated transition needed without a theme toggle |
 | Screenshots | grim + slurp + wrapper | area/full/window, clipboard + `~/Pictures/Screenshots` |
 | Clipboard | cliphist | text+image history, `$mod+p` picker |
@@ -49,14 +50,14 @@ prompt during install).
 ## Theme
 
 One palette, defined once in `theme/colors.env`. `scripts/theme-gen.py` derives
-every app's colors from it — foot, waybar, sway borders, swaync, rofi, swaylock,
+every app's colors from it — kitty, waybar, sway borders, swaync, rofi, swaylock,
 quickshell, qt6ct — and **refuses to generate anything unreadable**: body text
 must clear 7:1 contrast and every text-bearing accent 3:1. That gate is not
 decoration; it rejected five colors during an earlier build, and a deliberately
 grim palette is exactly where contrast quietly slips.
 
 ```
-theme/colors.env  ->  scripts/theme-gen.py  ->  theme/{foot.ini, colors.css,
+theme/colors.env  ->  scripts/theme-gen.py  ->  theme/{kitty.conf, colors.css,
                           (WCAG gate)            sway-colors.conf, rofi.rasi,
                                                  swaylock.conf, quickshell.json,
                                                  qt6ct-colors.conf}
@@ -79,7 +80,7 @@ theme/colors.env ── RED/GREEN/ORANGE + ANSI ──┘      (WCAG gate)
 The split is the point. Semantic colors and the ANSI block are NOT wallpaper-
 derived: a critical-battery badge that turns wallpaper-brown is decoration
 rather than a warning, and re-hueing ANSI per wallpaper makes every language
-look wrong in foot. The contrast gate still runs on the merged result — it just
+look wrong in kitty. The contrast gate still runs on the merged result — it just
 nudges a failing color until it clears instead of aborting, because a wallpaper
 change must never leave you with an unreadable bar.
 

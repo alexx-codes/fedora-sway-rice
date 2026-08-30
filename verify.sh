@@ -247,7 +247,7 @@ if systemctl --user cat sway-session.target >/dev/null 2>&1; then
 else
     fail "sway-session.target missing — is sway-systemd installed?"
 fi
-for u in waybar swaync swayidle quickshell wallpaper-daemon polkit-agent cliphist-text; do
+for u in waybar swaync swayidle quickshell autotiling wallpaper-daemon polkit-agent cliphist-text; do
     if systemctl --user is-enabled "$u.service" >/dev/null 2>&1; then
         pass "$u.service enabled"
     else

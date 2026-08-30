@@ -155,6 +155,24 @@ install_packages() {
         fi
     fi
 
+    # ------------------------------------------------------------ autotiling
+    # autotiling itself is not packaged for Fedora, so it cannot live in
+    # packages.tsv (which install.sh feeds straight to dnf) — but its installer,
+    # pipx, is in the repos and IS listed there, so the dnf pass above should
+    # already have put it on PATH. Its systemd unit has a ConditionPathIsExecutable
+    # guard, so a failure here degrades to "sway tiles the normal way" rather
+    # than a restart-looping unit.
+    say "autotiling (via pipx — autotiling is not in the Fedora repos)"
+    if command -v autotiling >/dev/null 2>&1; then
+        ok "autotiling already installed"
+    elif command -v pipx >/dev/null 2>&1; then
+        pipx install autotiling >/dev/null 2>&1 \
+            && ok "autotiling installed to ~/.local/bin" \
+            || warn "pipx install autotiling failed — sway will tile without it"
+    else
+        warn "pipx missing (should have come from packages.tsv) — skipping autotiling"
+    fi
+
     # swww is no longer built by default: with the theme toggle gone there is
     # no transition to animate, and swaybg draws the wallpaper once and idles
     # instead of keeping a second daemon on the framebuffer. If you want
@@ -271,7 +289,7 @@ deploy_configs() {
     fi
 
     # First-run backups of app config dirs we own
-    for app in sway waybar foot rofi swaync qt6ct; do
+    for app in sway waybar kitty rofi swaync qt6ct; do
         if [ -d "$cfg/$app" ] && [ ! -f "$cfg/$app/.rice-managed" ]; then
             backup "$cfg/$app"
         fi
@@ -280,7 +298,7 @@ deploy_configs() {
         backup "$cfg/rice"
     fi
 
-    for app in sway waybar foot swaync qt6ct; do
+    for app in sway waybar kitty swaync qt6ct; do
         deploy_tree "$repo/config/$app" "$cfg/$app"
         touch "$cfg/$app/.rice-managed"
     done
@@ -447,6 +465,7 @@ EOF
     systemctl --user daemon-reload
     systemctl --user enable \
         waybar.service swaync.service swayidle.service quickshell.service \
+        autotiling.service \
         wallpaper-daemon.service wallpaper-set.service polkit-agent.service \
         cliphist-text.service cliphist-image.service squeekboard.service \
         battery-watch.timer 2>/dev/null \

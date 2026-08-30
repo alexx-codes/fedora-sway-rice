@@ -8,7 +8,7 @@
 # Edit this file, then run scripts/keybinds-gen.py to regenerate
 # config/sway/keybinds.conf and config/sway/KEYBINDS.md. The Quickshell popup
 # and rofi fallback read this file directly at runtime, so they can't drift.
-Launching apps	$mod+Return	-	exec ~/.config/rice/scripts/launch.sh foot	Open a terminal (Foot) on the current workspace
+Launching apps	$mod+Return	-	exec ~/.config/rice/scripts/launch.sh kitty	Open a terminal (kitty) on the current workspace
 Launching apps	$mod+a	-	exec ~/.config/rice/scripts/launch.sh rofi -show drun	App launcher (rofi)
 Launching apps	$mod+Shift+c	-	exec ~/.config/rice/scripts/launch-or-focus.sh 2 '^(code|Code)$' code --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations	Jump to workspace 2 and launch/focus VS Code
 Launching apps	$mod+b	-	exec ~/.config/rice/scripts/browser.sh	Open your default browser (whatever xdg-settings reports)

@@ -8,14 +8,15 @@ Custom Sway window manager rice for Fedora, built from scratch (not using a prem
 
 **Stack:**
 - Compositor: Sway
-- Terminal: Foot
+- Terminal: kitty
 - Bar: Waybar
 - Shell/widgets: Quickshell
+- Tiling: autotiling (systemd user unit)
 - Theming: matugen
 
 **Design direction:**
 - Dark and minimalistic by default — productivity is the main goal, should feel snappy and fast
-- Tokyo Night dark as the default palette, with a pastel light palette as a toggle
+- Ashfall (cold, desaturated: ash on charcoal) is the one palette — see theme/colors.env
 - [Fill in: still going with the anime-cat visual direction, or has that changed since the rice restart?]
 
 ## Known failure history — read before touching autostart/systemd

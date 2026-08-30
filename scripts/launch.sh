@@ -22,7 +22,7 @@
 # passed, but the toggle exits non-zero whenever the swaync daemon is not
 # running — silently. Use --report for any bind whose target can fail after
 # it starts; it waits for the exit status and reports through run_or_report.
-# Do NOT use it for long-running programs (foot, rofi) — it would block.
+# Do NOT use it for long-running programs (kitty, rofi) — it would block.
 set -u
 . "$(dirname "$0")/lib-notify.sh"
 

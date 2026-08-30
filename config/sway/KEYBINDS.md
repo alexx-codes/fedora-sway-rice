@@ -40,7 +40,7 @@
 
 | Keys | Action |
 |------|--------|
-| `$mod+Return` | Open a terminal (Foot) on the current workspace |
+| `$mod+Return` | Open a terminal (kitty) on the current workspace |
 | `$mod+a` | App launcher (rofi) |
 | `$mod+Shift+c` | Jump to workspace 2 and launch/focus VS Code |
 | `$mod+b` | Open your default browser (whatever xdg-settings reports) |
@@ -120,5 +120,5 @@ silently, so a missing package or permission problem says so.
 - `$mod+Shift+e` opens the power menu rather than instantly exiting Sway —
   logout is one of its options, so you can't fat-finger your session away.
 - Media/brightness keys carry `--locked`, so they keep working on the lock screen.
-- The theme toggle (`$mod+Shift+t`) switches Foot, Waybar, Quickshell, GTK, Qt,
+- The theme toggle (`$mod+Shift+t`) switches kitty, Waybar, Quickshell, GTK, Qt,
   swaync, rofi, swaylock and the wallpaper in one atomic step.

@@ -123,7 +123,7 @@ Two guards were added so this class cannot recur:
 
 - `launch.sh --report` runs a command, waits for its exit status, and reports failure
   via `run_or_report` — for any bind whose target can fail *after* it starts. (Not for
-  long-running programs like `foot`/`rofi`; it would block.)
+  long-running programs like `kitty`/`rofi`; it would block.)
 - `verify.sh` now checks that every `~/.config/rice/scripts/*` target in
   `keybinds.conf` **exists and is executable**. The pre-existing check deliberately
   skipped `~/` and `/` paths, so it had never looked at the rice's own scripts — the
